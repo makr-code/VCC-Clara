@@ -29,3 +29,7 @@ Thumbs.db
 # Project specific
 wandb/
 *.pyc
+
+# Large data files (> 100MB)
+data/processed/*.jsonl
+data/raw/large_files/
