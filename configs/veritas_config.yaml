@@ -1,0 +1,75 @@
+# Spezielle Konfiguration für CLARA mit großen Datenverzeichnissen (wie Y:\veritas\data\)
+# CLARA - Cognitive Legal and Administrative Reasoning Assistant
+
+# Modell-Einstellungen
+model:
+  base_model: "LeoLM/leo-hessianai-7b"  # Beste Wahl für deutsche Verwaltung
+
+# LoRA Parameter (für große Datenmengen optimiert)
+lora:
+  r: 32                   # Höherer Rank für bessere Qualität bei vielen Daten
+  alpha: 64               # 2*r
+  dropout: 0.05           # Niedrigerer Dropout
+  target_modules:
+    - "q_proj"
+    - "v_proj" 
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Daten-Konfiguration für große Verzeichnisse
+data:
+  # Neuer globaler Datenpfad (alt: Y:\veritas\data)
+  train_file: "Y:\\data\\"  # Ihr Verzeichnis
+  validation_split: 0.05             # Nur 5% für Validation (mehr Daten für Training)
+  max_length: 1024                   # Längere Sequenzen für komplexe Texte
+  preprocessing:
+    remove_duplicates: true          # Wichtig bei vielen Dateien
+    min_length: 20                   # Längere Mindesttexte
+    max_length: 8192                 # Sehr lange Dokumente chunken
+    max_files: 10000                 # Limit für sehr große Verzeichnisse (optional)
+
+# Training-Parameter (für große Datenmengen angepasst)
+training:
+  output_dir: "models/veritas_lora_outputs"
+  num_epochs: 2                      # Weniger Epochen bei vielen Daten
+  batch_size: 2                      # Kleine Batches für Memory
+  eval_batch_size: 1
+  gradient_accumulation_steps: 8     # Kompensiert kleine Batch Size
+  learning_rate: 1e-4                # Niedrigere LR für Stabilität
+  weight_decay: 0.01
+  warmup_steps: 500                  # Mehr Warmup-Steps
+  logging_steps: 50
+  save_steps: 1000                   # Seltener speichern
+  eval_steps: 1000
+  save_total_limit: 2                # Weniger Checkpoints
+  fp16: true
+  seed: 42
+  dataloader_num_workers: 4          # Parallel loading
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+  early_stopping: true
+  patience: 3
+
+# Wandb Integration für Monitoring großer Trainings
+wandb:
+  enabled: true
+  project: "CLARA-veritas"
+  entity: "your_username"
+  
+# Ollama Integration
+ollama:
+  convert: true
+  output_path: "ollama_models/"
+  model_name: "clara-veritas"
+  
+# Hardware-Optimierungen für große Datenmengen
+hardware:
+  use_gradient_checkpointing: true
+  dataloader_num_workers: 6
+  pin_memory: true
+  prefetch_factor: 4

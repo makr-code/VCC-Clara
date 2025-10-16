@@ -1,0 +1,78 @@
+# CUDA-optimierte LoRA Konfiguration für CLARA mit LeoLM (ohne Flash Attention)
+
+# Modell-Einstellungen
+model:
+  base_model: "LeoLM/leo-hessianai-7b"  # Deutsches Modell
+  revision: "88c5ac07006ea8f1b5d10aa4f03f0d624dd27e56"  # Pinned revision für Sicherheit
+  trust_remote_code: false  # Sicherheit: Standard-Attention verwenden
+  use_flash_attention: false  # Standard Attention
+
+# LoRA Parameter (Speicher-optimiert)
+lora:
+  r: 32                   # Reduziert von 64 für weniger Speicherverbrauch
+  alpha: 64               # 2*r für optimale Performance
+  dropout: 0.1            # Etwas höherer Dropout für Regularisierung
+  target_modules:         # LeoLM-spezifische Module
+    - "q_proj"
+    - "v_proj" 
+    - "k_proj"
+    - "o_proj"
+
+# Daten-Konfiguration (Speicher-optimiert)
+data:
+  train_file: "data/veritas_processed/batch_processed_1756566575.jsonl"
+  validation_split: 0.1
+  max_length: 1024        # Reduziert von 2048 für weniger Speicherverbrauch
+  preprocessing:
+    remove_duplicates: true
+    min_length: 20
+    max_length: 2048      # Für deutsche Verwaltungstexte ausreichend
+
+# Training-Parameter (Speicher-optimiert für RTX 3060 12GB)
+training:
+  output_dir: "models/clara_leo_cuda_outputs"
+  num_epochs: 3
+  batch_size: 1           # Reduziert von 8 auf 1 für Speicher
+  eval_batch_size: 1      # Reduziert für Speicher
+  gradient_accumulation_steps: 16  # Erhöht um effektive Batch-Size beizubehalten
+  learning_rate: 1e-4     # Standard-LR für deutsches Modell
+  weight_decay: 0.01
+  warmup_steps: 500
+  logging_steps: 10
+  save_steps: 500         # Weniger häufig speichern
+  eval_steps: 500
+  save_total_limit: 2     # Weniger Checkpoints
+  fp16: true              # Mixed Precision für Speed
+  seed: 42
+  dataloader_num_workers: 2  # Reduziert für Speicher
+  gradient_checkpointing: true  # Speicher-Optimierung
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+
+# CUDA-spezifische Einstellungen
+hardware:
+  use_cuda: true
+  device_map: "auto"
+  max_memory: "10GB"      # Für RTX 3060 12GB
+  offload_folder: "offload_weights"
+
+# Flash Attention Einstellungen
+flash_attention:
+  enabled: true
+  attention_dropout: 0.0
+  causal: true
+  window_size: null       # Nutze volle Aufmerksamkeit
+
+# Monitoring
+monitoring:
+  use_tensorboard: true
+  use_wandb: false        # Optional
+  log_model: true
+  
+# Sicherheitseinstellungen
+security:
+  pin_model_revision: true
+  verify_checksum: true
+  max_file_size: "50GB"

@@ -1,0 +1,17 @@
+{
+  "297b494299e513ee51d441cf4a8309bc": {
+    "file_path": "data\\test_batch\\dokument1.txt",
+    "processed_time": 1756632334.900714,
+    "output_info": "data\\test_output_smart\\batch_processed_1756632310.jsonl"
+  },
+  "2a3c8c77ce565d645221d54e1e9a8805": {
+    "file_path": "data\\test_batch\\dokument2.txt",
+    "processed_time": 1756632334.909436,
+    "output_info": "data\\test_output_smart\\batch_processed_1756632310.jsonl"
+  },
+  "03ef2e1b2b9dae30688db595063a5786": {
+    "file_path": "data\\test_batch\\verwaltungsrecht.md",
+    "processed_time": 1756632334.91606,
+    "output_info": "data\\test_output_smart\\batch_processed_1756632310.jsonl"
+  }
+}

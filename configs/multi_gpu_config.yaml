@@ -1,0 +1,88 @@
+# Multi-GPU LoRA Konfiguration für CLARA
+# Optimiert für 2+ Grafikkarten
+
+# Modell-Einstellungen
+model:
+  base_model: "LeoLM/leo-hessianai-7b"
+  revision: "88c5ac07006ea8f1b5d10aa4f03f0d624dd27e56"
+  trust_remote_code: false
+  use_flash_attention: false
+
+# LoRA Parameter (Multi-GPU optimiert)
+lora:
+  r: 64                   # Höherer Rank möglich mit mehr Speicher
+  alpha: 128              # 2*r
+  dropout: 0.05
+  target_modules:         # Alle wichtigen Module
+    - "q_proj"
+    - "v_proj" 
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Daten-Konfiguration
+data:
+  train_file: "data/veritas_processed/batch_processed_1756566575.jsonl"
+  validation_split: 0.1
+  max_length: 2048        # Längere Sequenzen möglich
+  preprocessing:
+    remove_duplicates: true
+    min_length: 20
+    max_length: 4096
+
+# Multi-GPU Training-Parameter
+training:
+  output_dir: "models/clara_multi_gpu_outputs"
+  num_epochs: 3
+  batch_size: 4           # Pro GPU! Gesamt = batch_size * num_gpus
+  eval_batch_size: 4      
+  gradient_accumulation_steps: 2
+  learning_rate: 1e-4     
+  weight_decay: 0.01
+  warmup_steps: 500
+  logging_steps: 10
+  save_steps: 250
+  eval_steps: 250
+  save_total_limit: 3
+  fp16: true              
+  seed: 42
+  dataloader_num_workers: 4  # Mehr Workers für Multi-GPU
+  gradient_checkpointing: true
+  
+  # Multi-GPU spezifische Einstellungen
+  ddp_backend: "nccl"           # Für NVIDIA GPUs
+  ddp_find_unused_parameters: false
+  dataloader_pin_memory: true   # Bessere GPU-Übertragung
+  group_by_length: true         # Effizienter für variable Längen
+
+# Distributed Training Einstellungen
+distributed:
+  backend: "nccl"         # NVIDIA GPUs
+  # backend: "gloo"       # Für CPU oder gemischte Setups
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+
+# Hardware (Multi-GPU)
+hardware:
+  use_cuda: true
+  device_map: "auto"      # Automatische GPU-Verteilung
+  max_memory_per_gpu: "10GB"  # Pro GPU Limit
+
+# Speicher-Optimierungen
+memory:
+  empty_cache_steps: 50   # Häufiger bei Multi-GPU
+  
+# Wandb (Multi-GPU kompatibel)
+wandb:
+  enabled: true
+  project: "clara-multi-gpu"
+  
+# Ollama Integration
+ollama:
+  convert: true
+  output_path: "models/ollama"
+  model_name: "clara-multi-gpu"

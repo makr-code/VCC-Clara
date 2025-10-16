@@ -1,0 +1,72 @@
+# LoRA Konfiguration für CLARA mit LeoLM (EMPFOHLEN für deutsche Verwaltung)
+
+# Modell-Einstellungen
+model:
+  base_model: "LeoLM/leo-hessianai-7b"  # Deutsches Modell - beste Wahl!
+  revision: "88c5ac07006ea8f1b5d10aa4f03f0d624dd27e56"  # Pinned revision für Sicherheit
+  trust_remote_code: false  # Sicherheit: verhindert automatisches Laden unsicherer Code
+
+# LoRA Parameter (für LeoLM optimiert)
+lora:
+  r: 32                    # Höherer Rank für bessere deutsche Sprachqualität
+  alpha: 64               # 2*r für optimale Performance
+  dropout: 0.05           # Niedrigerer Dropout für deutsche Texte
+  target_modules:         # LeoLM-spezifische Module
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Daten-Konfiguration
+data:
+  train_file: "data/processed/verwaltung_train.jsonl"
+  validation_split: 0.1
+  max_length: 1024        # Längere Sequenzen für deutsche Verwaltungstexte
+  preprocessing:
+    remove_duplicates: true
+    min_length: 20        # Deutsche Texte tendenziell länger
+    max_length: 4096
+
+# Training-Parameter (für deutsches Modell optimiert)
+training:
+  output_dir: "models/clara_leo_outputs"
+  num_epochs: 3
+  batch_size: 2           # Angepasst für 7B Modell
+  eval_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 1e-4     # Konservativere LR für deutsches Modell
+  weight_decay: 0.01
+  warmup_steps: 200
+  logging_steps: 10
+  save_steps: 500
+  eval_steps: 500
+  save_total_limit: 3
+  fp16: true
+  seed: 42
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+  early_stopping: true
+  patience: 3
+
+# Wandb Integration
+wandb:
+  enabled: false
+  project: "CLARA-leo"
+  entity: "your_username"
+  
+# Ollama Integration
+ollama:
+  convert: true
+  output_path: "ollama_models/"
+  model_name: "clara-leo"
+  
+# Hardware-spezifische Einstellungen
+hardware:
+  use_gradient_checkpointing: true
+  dataloader_num_workers: 4
+  pin_memory: true

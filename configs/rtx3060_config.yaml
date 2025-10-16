@@ -1,0 +1,73 @@
+# RTX 3060 12GB optimierte LoRA Konfiguration für CLARA mit LeoLM
+# Speziell angepasst für begrenzten GPU-Speicher
+
+# Modell-Einstellungen
+model:
+  base_model: "LeoLM/leo-hessianai-7b"  # Deutsches Modell
+  revision: "88c5ac07006ea8f1b5d10aa4f03f0d624dd27e56"  # Pinned revision für Sicherheit
+  trust_remote_code: false  # Sicherheit: Standard-Attention verwenden
+  use_flash_attention: false  # Standard Attention
+
+# LoRA Parameter (Speicher-optimiert für 12GB)
+lora:
+  r: 16                   # Niedrigerer Rank für Speicher
+  alpha: 32               # 2*r für optimale Performance
+  dropout: 0.1            # Regularisierung
+  target_modules:         # Nur wichtigste Module für Speicher
+    - "q_proj"
+    - "v_proj"
+
+# Daten-Konfiguration (Speicher-optimiert)
+data:
+  train_file: "data/veritas_processed/batch_processed_1756566575.jsonl"
+  validation_split: 0.05  # Weniger Validation für mehr Training
+  max_length: 512         # Kurze Sequenzen für weniger Speicher
+  preprocessing:
+    remove_duplicates: true
+    min_length: 20
+    max_length: 1024      # Maximum für längere Texte
+
+# Training-Parameter (RTX 3060 optimiert)
+training:
+  output_dir: "models/clara_rtx3060_outputs"
+  num_epochs: 2           # Weniger Epochen für schnelleres Training
+  batch_size: 1           # Minimale Batch-Size
+  eval_batch_size: 1      
+  gradient_accumulation_steps: 32  # Hohe Akkumulation für effektive Batch-Size
+  learning_rate: 2e-4     # Etwas höhere LR für weniger Epochen
+  weight_decay: 0.01
+  warmup_steps: 200       # Weniger Warmup
+  logging_steps: 50       
+  save_steps: 1000        # Seltener speichern
+  eval_steps: 1000
+  save_total_limit: 1     # Nur ein Checkpoint
+  fp16: true              # Essenziell für Speicher
+  seed: 42
+  dataloader_num_workers: 1  # Minimal für Speicher
+  gradient_checkpointing: true  # Wichtig für Speicher
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+
+# Hardware-spezifische Einstellungen (RTX 3060)
+hardware:
+  use_cuda: true
+  device_map: null        # Kein automatisches Mapping für bessere Kontrolle
+  max_memory_gb: 10       # Sicherheitspuffer für 12GB GPU
+
+# Speicher-Optimierungen (Windows-kompatibel)
+memory:
+  empty_cache_steps: 100  # Cache regelmäßig leeren
+  max_split_size_mb: 512  # Windows-kompatible Speicher-Aufteilung
+  
+# Wandb (optional)
+wandb:
+  enabled: false          # Deaktiviert für weniger Overhead
+  project: "clara-rtx3060"
+  
+# Ollama Integration
+ollama:
+  convert: true
+  output_path: "models/ollama"
+  model_name: "clara-rtx3060"

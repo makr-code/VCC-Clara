@@ -1,0 +1,83 @@
+# QLoRA Konfiguration für CLARA (Cognitive Legal and Administrative Reasoning Assistant)
+
+# Modell-Einstellungen
+model:
+  base_model: "LeoLM/leo-hessianai-7b"  # EMPFOHLEN: Deutsches Modell für Verwaltung
+  # Alternative deutsche Modelle:
+  # base_model: "DiscoResearch/DiscoLM-German-7b-v1"
+  # base_model: "malteos/hermeo-7b"
+  # Englische Fallback-Modelle:
+  # base_model: "microsoft/DialoGPT-medium"
+  # base_model: "meta-llama/Llama-2-7b-chat-hf"
+
+# LoRA Parameter (für QLoRA)
+lora:
+  r: 64                   # Höherer Rank für QLoRA (16, 32, 64)
+  alpha: 128              # LoRA Alpha-Parameter (meist 2*r)
+  dropout: 0.05           # Niedrigerer Dropout für QLoRA
+  target_modules:         # Module für LoRA-Adaption
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# QLoRA-spezifische Parameter
+qlora:
+  double_quant: true      # Doppelte Quantisierung für bessere Kompression
+  quant_type: "nf4"       # NormalFloat4 Quantisierung
+  compute_dtype: "bfloat16"  # BFloat16 für bessere Stabilität
+
+# Daten-Konfiguration
+data:
+  train_file: "data/processed/verwaltung_train.jsonl"
+  validation_split: 0.1   # 10% für Validation
+  max_length: 1024        # Längere Sequenzen möglich mit QLoRA
+  preprocessing:
+    remove_duplicates: true
+    min_length: 10
+    max_length: 4096
+
+# Training-Parameter (angepasst für QLoRA)
+training:
+  output_dir: "models/qlora_outputs"
+  num_epochs: 5           # Mehr Epochen da effizienter
+  batch_size: 1           # Kleinere Batch-Size für QLoRA
+  eval_batch_size: 1
+  gradient_accumulation_steps: 16  # Höhere Akkumulation
+  learning_rate: 2e-4
+  weight_decay: 0.01
+  warmup_steps: 200
+  logging_steps: 5
+  save_steps: 250
+  eval_steps: 250
+  save_total_limit: 3
+  bf16: true              # BFloat16 für QLoRA empfohlen
+  seed: 42
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+  early_stopping: true
+  patience: 5
+
+# Wandb Integration (optional)
+wandb:
+  enabled: false
+  project: "CLARA-qlora"
+  entity: "your_username"
+  
+# Ollama Integration
+ollama:
+  convert: true
+  output_path: "ollama_models/"
+  model_name: "clara-qlora"
+  
+# Hardware-spezifische Einstellungen für QLoRA
+hardware:
+  use_gradient_checkpointing: true
+  dataloader_num_workers: 2  # Weniger Worker für Memory
+  pin_memory: false          # Kein Pin Memory bei QLoRA
+  max_memory_per_gpu: "12GB" # GPU Memory Limit

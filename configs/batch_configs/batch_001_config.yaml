@@ -1,0 +1,62 @@
+data:
+  max_length: 2048
+  preprocessing:
+    max_length: 4096
+    min_length: 20
+    remove_duplicates: true
+  train_file: data\training_batches\batch_001.jsonl
+  validation_split: 0.1
+evaluation:
+  metric: perplexity
+flash_attention:
+  attention_dropout: 0.0
+  causal: true
+  enabled: true
+  window_size: null
+hardware:
+  device_map: auto
+  max_memory: 10GB
+  offload_folder: offload_weights
+  use_cuda: true
+lora:
+  alpha: 128
+  dropout: 0.05
+  r: 64
+  target_modules:
+  - q_proj
+  - v_proj
+  - k_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+model:
+  base_model: LeoLM/leo-hessianai-7b
+  revision: 88c5ac07006ea8f1b5d10aa4f03f0d624dd27e56
+  trust_remote_code: false
+  use_flash_attention: false
+monitoring:
+  log_model: true
+  use_tensorboard: true
+  use_wandb: false
+security:
+  max_file_size: 50GB
+  pin_model_revision: true
+  verify_checksum: true
+training:
+  batch_size: 8
+  dataloader_num_workers: 4
+  eval_batch_size: 8
+  eval_steps: 250
+  fp16: true
+  gradient_accumulation_steps: 2
+  gradient_checkpointing: true
+  learning_rate: 1e-4
+  logging_steps: 10
+  num_epochs: 3
+  output_dir: models/clara_batch_001
+  save_steps: 250
+  save_total_limit: 3
+  seed: 42
+  warmup_steps: 500
+  weight_decay: 0.01

@@ -1,0 +1,12 @@
+# Router Konfiguration (Phase 1)
+# Kann via ENV CLARA_ROUTER_CONFIG überschrieben werden.
+thresholds:
+  hard_domain: 1.5        # Score ab dem direkt akzeptiert wird
+  conf_high: 0.85         # (Reserviert für spätere Exploration)
+  conf_low: 0.55          # Unterhalb -> Fallback
+weights:
+  domain_metric_bonus: 0.3  # Multiplikator für domain_score Einbezug
+options:
+  use_domain_score: true
+  enable_static_rules: true
+  default_adapter: base_default_adapter

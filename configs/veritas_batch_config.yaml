@@ -1,0 +1,98 @@
+# CLARA Batch-Processing Konfiguration für Veritas-Datenverzeichnis
+# Optimiert für große Rechts- und Verwaltungsdatenbestände
+# Y:\veritas\data\ Processing Setup
+
+# Batch-Processing Parameter
+batch_processing:
+  # Neuer Standard-Pfad (Migration von Y:\veritas\data -> Y:\data)
+  input_directory: "Y:\\data\\"
+  output_directory: "data/veritas_processed/"
+  temp_directory: "data/temp_veritas/"
+  
+  # Performance-Optimierungen
+  parallel_workers: 12              # Mehr Prozesse für große Datenmengen
+  memory_optimization: true         # Für sehr große Dateien
+  chunk_size: 1000                 # Dateien pro Batch-Chunk
+  max_file_size_mb: 100            # Größere Dateien erlaubt
+  
+  # Erweiterte Dateiunterstützung
+  supported_formats:
+    text: [".txt", ".md", ".markdown", ".text"]
+    structured: [".json", ".jsonl", ".csv", ".tsv"]
+    documents: [".pdf", ".docx", ".doc", ".odt", ".rtf"]
+    archives: [".zip", ".tar", ".tar.gz", ".7z", ".rar"]
+    
+  # Intelligente Filterung
+  quality_filtering:
+    enabled: true
+    ai_scoring: true               # KI bewertet Textqualität
+    min_score: 0.6                # Mindest-Qualitätsscore
+    min_text_length: 50           # Längere Texte für Rechtsdokumente
+    max_text_length: 50000        # Sehr lange Dokumente erlaubt
+    
+  # Duplikatserkennung (wichtig bei Rechtsdokumenten)
+  duplicate_detection:
+    method: "content_hash"         # Hash-basierte Erkennung
+    similarity_threshold: 0.85     # 85% Ähnlichkeit = Duplikat
+    cache_size: 50000             # Große Cache für viele Dokumente
+    cross_file_dedup: true        # Über Datei-Grenzen hinweg
+    
+  # Spezielle Verarbeitung für Rechtsdokumente
+  legal_processing:
+    extract_citations: true        # Gesetzesverweise extrahieren
+    preserve_structure: true       # Gliederung beibehalten
+    paragraph_splitting: true      # Intelligente Absatz-Trennung
+    metadata_extraction: true      # Datum, Autor, Aktenzeichen
+    
+# Datenaufbereitung für Training
+data_preparation:
+  output_format: "jsonl"           # Standard-Format für CLARA
+  include_metadata: true           # Zusätzliche Informationen
+  text_preprocessing:
+    normalize_whitespace: true
+    remove_artifacts: true         # OCR-Fehler entfernen
+    preserve_legal_formatting: true # Rechtsspezifische Formatierung
+    
+  # Chunking für lange Dokumente
+  chunking:
+    enabled: true
+    method: "semantic"             # Semantische statt starre Aufteilung
+    max_chunk_size: 2048          # Token pro Chunk
+    overlap_size: 200             # Überlappung zwischen Chunks
+    
+# Monitoring und Logging
+monitoring:
+  progress_updates: 100           # Status alle 100 verarbeitete Dateien
+  detailed_logging: true
+  error_tracking: true
+  performance_metrics: true
+  
+  # Benachrichtigungen bei großen Batches
+  notifications:
+    email_on_completion: false    # Konfigurieren Sie Ihre E-Mail
+    slack_webhook: ""             # Optional: Slack-Integration
+    
+# Error Handling
+error_handling:
+  continue_on_error: true         # Verarbeitung trotz Fehlern fortsetzen
+  max_errors_per_file: 5         # Datei nach 5 Fehlern überspringen
+  retry_attempts: 3               # Retry-Versuche bei temporären Fehlern
+  quarantine_problematic: true    # Problematische Dateien separieren
+  
+# Ressourcen-Management
+resources:
+  memory_limit_gb: 32            # RAM-Limit
+  disk_space_check: true         # Prüfung verfügbarer Festplatte
+  temp_cleanup: true             # Automatische Aufräumung
+  
+# Post-Processing
+post_processing:
+  generate_statistics: true       # Detaillierte Verarbeitungsstatistiken
+  create_index: true             # Index für schnelle Suche
+  validate_output: true          # Ausgabe-Validierung
+  
+# Training-Integration
+training_integration:
+  auto_start_training: false     # Manueller Training-Start empfohlen
+  config_template: "configs/veritas_config.yaml"
+  model_output_name: "clara-veritas-batch"

@@ -1,0 +1,76 @@
+# LoRA Konfiguration für CLARA (Cognitive Legal and Administrative Reasoning Assistant)
+
+# Modell-Einstellungen
+model:
+  base_model: "LeoLM/leo-hessianai-7b"  # EMPFOHLEN: Deutsches Modell für Verwaltung
+  # Alternative deutsche Modelle:
+  # base_model: "DiscoResearch/DiscoLM-German-7b-v1"
+  # base_model: "malteos/hermeo-7b"
+  # Englische Fallback-Modelle:
+  # base_model: "microsoft/DialoGPT-medium"  
+  # base_model: "meta-llama/Llama-2-7b-chat-hf"
+
+# LoRA Parameter
+lora:
+  r: 16                    # Rank der LoRA-Adaption (4, 8, 16, 32)
+  alpha: 32               # LoRA Alpha-Parameter (meist 2*r)
+  dropout: 0.1            # Dropout-Rate für LoRA Layer
+  target_modules:         # Module für LoRA-Adaption
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Daten-Konfiguration
+data:
+  train_file: "data/processed/verwaltung_train.jsonl"
+  validation_split: 0.1   # 10% für Validation
+  max_length: 512         # Maximale Sequenzlänge
+  preprocessing:
+    remove_duplicates: true
+    min_length: 10
+    max_length: 2048
+
+# Training-Parameter
+training:
+  output_dir: "models/lora_outputs"
+  num_epochs: 3
+  batch_size: 4
+  eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 2e-4
+  weight_decay: 0.01
+  warmup_steps: 100
+  logging_steps: 10
+  save_steps: 500
+  eval_steps: 500
+  save_total_limit: 3
+  fp16: true              # Mixed Precision Training
+  seed: 42
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+  early_stopping: true
+  patience: 3
+
+# Wandb Integration (optional)
+wandb:
+  enabled: false
+  project: "CLARA-lora"
+  entity: "your_username"
+  
+# Ollama Integration
+ollama:
+  convert: true
+  output_path: "ollama_models/"
+  model_name: "clara-lora"
+  
+# Hardware-spezifische Einstellungen
+hardware:
+  use_gradient_checkpointing: true
+  dataloader_num_workers: 4
+  pin_memory: true

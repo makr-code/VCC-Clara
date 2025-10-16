@@ -1,0 +1,57 @@
+# CPU-optimierte LoRA Konfiguration für CLARA mit DiscoLM (Flash Attention frei)
+
+# Modell-Einstellungen
+model:
+  base_model: "DiscoResearch/DiscoLM-German-7b-v1"  # CPU-kompatibles deutsches Modell
+  trust_remote_code: false  # Sicherheit: verhindert automatisches Laden unsicherer Code
+
+# LoRA Parameter (für DiscoLM optimiert)
+lora:
+  r: 16                    # Kleinerer Rank für CPU-Training
+  alpha: 32               # 2*r für optimale Performance
+  dropout: 0.1            # Etwas höherer Dropout für CPU
+  target_modules:         # DiscoLM-spezifische Module
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Daten-Konfiguration
+data:
+  train_file: "data/processed/verwaltung_train.jsonl"
+  validation_split: 0.1
+  max_length: 512         # Kürzere Sequenzen für CPU-Training
+  preprocessing:
+    remove_duplicates: true
+    min_length: 20
+    max_length: 2048
+
+# Training-Parameter (CPU-optimiert)
+training:
+  output_dir: "models/clara_disco_cpu_outputs"
+  num_epochs: 2           # Weniger Epochen für CPU
+  batch_size: 1           # Kleinere Batch-Size für CPU
+  eval_batch_size: 1
+  gradient_accumulation_steps: 16  # Höhere Akkumulation
+  learning_rate: 2e-4     # Etwas höhere LR für weniger Epochen
+  weight_decay: 0.01
+  warmup_steps: 100
+  logging_steps: 5
+  save_steps: 200
+  eval_steps: 200
+  save_total_limit: 2
+  fp16: false             # CPU verwendet kein fp16
+  seed: 42
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+
+# Hardware-spezifische Einstellungen
+hardware:
+  use_cpu: true
+  dataloader_num_workers: 2
+  pin_memory: false

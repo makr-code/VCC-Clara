@@ -1,0 +1,49 @@
+# Schneller LoRA-Testlauf auf 100 Beispielen
+model:
+  base_model: "distilgpt2"  # Kleineres öffentliches Modell für schnellen Test ohne Flash Attention
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules:  # GPT-2 Attention + MLP Gewichte
+    - "c_attn"
+    - "c_proj"
+    - "c_fc"
+
+# Minimales Dataset (ca. 100 Beispiele)
+data:
+  train_file: "data/processed/subset_100.jsonl"
+  validation_split: 0.0   # Validierung überspringen für Schnelligkeit
+  max_length: 384
+  preprocessing:
+    remove_duplicates: false
+    min_length: 10
+    max_length: 1024
+
+training:
+  output_dir: "models/clara_minimal_outputs"
+  num_epochs: 1
+  batch_size: 2
+  eval_batch_size: 2
+  gradient_accumulation_steps: 4   # Effektiver Batch = 2*4 = 8
+  learning_rate: 2e-4
+  weight_decay: 0.0
+  warmup_steps: 5
+  logging_steps: 5
+  save_steps: 999999   # Kein Zwischen-Save
+  eval_steps: 999999
+  save_total_limit: 1
+  fp16: true
+  seed: 42
+
+wandb:
+  enabled: false
+
+ollama:
+  convert: false
+
+hardware:
+  use_gradient_checkpointing: true
+  dataloader_num_workers: 0
+  pin_memory: false

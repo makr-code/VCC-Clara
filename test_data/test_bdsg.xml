@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gesetze xmlns="http://example.org/verwaltung">
+    <titel>Bundesdatenschutzgesetz</titel>
+    <kategorie>Datenschutz</kategorie>
+    
+    <paragraf nummer="1">
+        <bezeichnung>Zweck und Anwendungsbereich des Gesetzes</bezeichnung>
+        <absatz nummer="1">
+            Zweck dieses Gesetzes ist es, den Einzelnen davor zu schützen, dass er durch den Umgang mit seinen personenbezogenen Daten in seinem Persönlichkeitsrecht beeinträchtigt wird.
+        </absatz>
+        <absatz nummer="2">
+            Dieses Gesetz gilt für die Erhebung, Verarbeitung und Nutzung personenbezogener Daten durch öffentliche Stellen des Bundes und durch nicht-öffentliche Stellen, soweit sie die Daten unter Einsatz von Datenverarbeitungsanlagen verarbeiten oder nutzen oder die Daten in oder aus nicht automatisierten Dateien verarbeiten oder nutzen.
+        </absatz>
+    </paragraf>
+    
+    <paragraf nummer="2">
+        <bezeichnung>Begriffsbestimmungen</bezeichnung>
+        <absatz nummer="1">
+            Personenbezogene Daten sind Einzelangaben über persönliche oder sachliche Verhältnisse einer bestimmten oder bestimmbaren natürlichen Person.
+        </absatz>
+        <absatz nummer="2">
+            Automatisierte Verarbeitung ist die Erhebung, Speicherung, Veränderung, Übermittlung, Sperrung, Löschung oder Nutzung personenbezogener Daten unter Einsatz von Datenverarbeitungsanlagen.
+        </absatz>
+    </paragraf>
+    
+    <meta>
+        <erstellungsdatum>2025-09-02</erstellungsdatum>
+        <quelle>Bundesgesetzblatt</quelle>
+    </meta>
+</gesetze>

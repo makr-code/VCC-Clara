@@ -1,0 +1,111 @@
+name: "CLARA Continuous Learning Config"
+version: "1.0"
+
+model:
+  name: "LeoLM/leo-hessianai-7b"
+  torch_dtype: "float16"
+  device_map: "auto"
+  low_cpu_mem_usage: true
+
+training:
+  output_dir: "models/clara_continuous"
+  logging_dir: "logs/continuous"
+  max_steps: -1
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 4
+  dataloader_num_workers: 0
+  fp16: true
+  save_strategy: "steps"
+  save_steps: 100
+  eval_strategy: "no"
+  logging_steps: 5
+  remove_unused_columns: false
+  dataloader_pin_memory: false
+  load_best_model_at_end: false
+
+# LoRA Konfiguration für kontinuierliches Lernen
+lora:
+  r: 8                        # Niedrigere Rank für schnellere Updates
+  alpha: 16                   # 2 * r
+  dropout: 0.05               # Wenig Dropout für kontinuierliches Lernen
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  inference_mode: false       # Wichtig für Training zur Laufzeit
+
+# Kontinuierliches Lernen spezifische Einstellungen
+continuous:
+  enabled: true
+  
+  # Buffer-Konfiguration
+  buffer_size: 1000           # Maximale Anzahl Samples im Buffer
+  quality_threshold: -0.5     # Mindestqualität (-1 bis 1)
+  min_batch_size: 25          # Minimale Batch-Größe für Training
+  
+  # Training-Timing
+  train_interval: 180         # Sekunden zwischen Training-Zyklen (3 Min)
+  max_wait_time: 900          # Max. Wartezeit ohne Training (15 Min)
+  
+  # Training-Parameter
+  learning_rate: 1e-6         # Sehr niedrige LR für kontinuierliches Lernen
+  max_epochs: 1               # Nur ein Epoch pro Zyklus
+  warmup_steps: 0             # Kein Warmup
+  weight_decay: 0.001         # Geringe Regularisierung
+  
+  # Qualitätsbewertung
+  feedback_weights:
+    positive: 2.0             # Gewichtung für positive Bewertungen
+    negative: 1.5             # Gewichtung für negative Bewertungen
+    neutral: 1.0              # Gewichtung für neutrale Bewertungen
+  
+  # Safety Features
+  max_daily_updates: 50       # Max. Updates pro Tag
+  pause_on_errors: 3          # Pausiere nach X Fehlern
+  auto_backup: true           # Automatische Backups
+  
+  # Monitoring
+  log_level: "INFO"
+  metrics_file: "logs/continuous_metrics.json"
+  performance_tracking: true
+
+# Daten-Konfiguration
+data:
+  max_length: 256             # Kürzere Texte für schnelles Training
+  padding: "max_length"
+  truncation: true
+  return_tensors: "pt"
+
+# Optimierung für kontinuierliches Lernen
+optimization:
+  gradient_checkpointing: true
+  torch_compile: false        # Deaktiviert für bessere Kompatibilität
+  use_cache: true
+  attention_implementation: "flash_attention_2"
+
+# Hardware-spezifische Einstellungen
+hardware:
+  mixed_precision: "fp16"
+  pin_memory: false
+  num_workers: 0
+  persistent_workers: false
+  prefetch_factor: 2
+
+# Sicherheit und Stabilität
+safety:
+  max_memory_usage: 0.85      # 85% GPU-Memory Limit
+  checkpoint_on_crash: true
+  recovery_mode: "auto"
+  validation_frequency: 10    # Jedes 10. Training validieren
+
+# Live-Inferenz Einstellungen
+inference:
+  max_new_tokens: 150
+  temperature: 0.7
+  top_p: 0.9
+  do_sample: true
+  repetition_penalty: 1.1
+  pad_token_id: null          # Wird automatisch gesetzt

@@ -1,0 +1,70 @@
+# LoRA Konfiguration für CLARA mit DiscoLM (Alternative deutsches Modell)
+
+# Modell-Einstellungen
+model:
+  base_model: "DiscoResearch/DiscoLM-German-7b-v1"  # Deutsches Konversationsmodell
+
+# LoRA Parameter (für DiscoLM optimiert)
+lora:
+  r: 32                    # Höherer Rank für deutsche Konversationen
+  alpha: 64               # 2*r
+  dropout: 0.05           # Niedrigerer Dropout
+  target_modules:         # DiscoLM-spezifische Module
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Daten-Konfiguration
+data:
+  train_file: "data/processed/verwaltung_train.jsonl"
+  validation_split: 0.1
+  max_length: 1024        # Optimiert für deutsche Dialoge
+  preprocessing:
+    remove_duplicates: true
+    min_length: 15
+    max_length: 3072
+
+# Training-Parameter (für DiscoLM optimiert)
+training:
+  output_dir: "models/clara_disco_outputs"
+  num_epochs: 3
+  batch_size: 2
+  eval_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 1e-4
+  weight_decay: 0.01
+  warmup_steps: 200
+  logging_steps: 10
+  save_steps: 500
+  eval_steps: 500
+  save_total_limit: 3
+  fp16: true
+  seed: 42
+  
+# Evaluation
+evaluation:
+  metric: "perplexity"
+  early_stopping: true
+  patience: 3
+
+# Wandb Integration
+wandb:
+  enabled: false
+  project: "CLARA-disco"
+  entity: "your_username"
+  
+# Ollama Integration
+ollama:
+  convert: true
+  output_path: "ollama_models/"
+  model_name: "clara-disco"
+  
+# Hardware-spezifische Einstellungen
+hardware:
+  use_gradient_checkpointing: true
+  dataloader_num_workers: 4
+  pin_memory: true
