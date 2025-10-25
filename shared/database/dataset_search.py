@@ -28,27 +28,25 @@ import asyncio
 import json
 import logging
 import os
-import sys
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import List, Dict, Optional, Any
 
-# Add UDS3 to path
-uds3_root = Path(__file__).parent.parent.parent / "uds3"
-if str(uds3_root) not in sys.path:
-    sys.path.insert(0, str(uds3_root))
+logger = logging.getLogger(__name__)
 
+# UDS3 Package Import (installed via: pip install -e ../uds3)
 try:
-    from search.search_api import UDS3SearchAPI, SearchQuery, SearchResult
-    from core import get_optimized_unified_strategy
+    from uds3.search.search_api import UDS3SearchAPI, SearchQuery, SearchResult
+    from uds3.core.polyglot_manager import UDS3PolyglotManager
     UDS3_AVAILABLE = True
-except ImportError:
+    logger.info("✅ UDS3 package imported successfully")
+except ImportError as e:
     UDS3_AVAILABLE = False
     UDS3SearchAPI = None
     SearchQuery = None
     SearchResult = None
-
-logger = logging.getLogger(__name__)
+    UDS3PolyglotManager = None
+    logger.warning(f"⚠️ UDS3 not available: {e}")
 
 
 # ============================================================================
@@ -152,21 +150,38 @@ class DatasetSearchAPI:
         Initialize Dataset Search API
         
         Args:
-            uds3_strategy: Optional UnifiedDatabaseStrategy instance
+            uds3_strategy: Optional UDS3PolyglotManager instance (auto-created if None)
         """
         self.uds3_strategy = uds3_strategy
         self.search_api = None
         
         if UDS3_AVAILABLE:
             try:
-                if uds3_strategy is None:
-                    # Get default strategy
-                    self.uds3_strategy = get_optimized_unified_strategy()
+                if uds3_strategy is None and UDS3PolyglotManager:
+                    # Auto-create UDS3PolyglotManager - reads config from uds3/config_local.py
+                    backend_config = {
+                        "relational": {"enabled": True},  # PostgreSQL (192.168.178.94:5432)
+                        "vector": {"enabled": True},      # ChromaDB (192.168.178.94:8000)
+                        "graph": {"enabled": True},       # Neo4j (192.168.178.94:7687)
+                        "file": {"enabled": True}         # CouchDB (192.168.178.94:32770)
+                    }
+                    
+                    logger.info("🔧 Initializing UDS3 PolyglotManager (auto-config from uds3/config_local.py)...")
+                    self.uds3_strategy = UDS3PolyglotManager(
+                        backend_config=backend_config,
+                        enable_rag=False  # Disable RAG for dataset search
+                    )
+                    logger.info("✅ UDS3 PolyglotManager created")
                 
-                self.search_api = UDS3SearchAPI(self.uds3_strategy)
-                logger.info("✅ DatasetSearchAPI initialized with UDS3")
+                if self.uds3_strategy and hasattr(self.uds3_strategy, 'db_manager'):
+                    # Create UDS3SearchAPI with db_manager
+                    self.search_api = UDS3SearchAPI(self.uds3_strategy.db_manager)
+                    logger.info("✅ DatasetSearchAPI initialized with UDS3 PolyglotManager")
+                else:
+                    logger.warning("⚠️ UDS3 PolyglotManager has no db_manager")
+                    
             except Exception as e:
-                logger.warning(f"⚠️ UDS3 initialization failed: {e}")
+                logger.warning(f"⚠️ UDS3 initialization failed: {e}", exc_info=True)
                 self.search_api = None
         else:
             logger.warning("⚠️ UDS3 not available - dataset search disabled")
