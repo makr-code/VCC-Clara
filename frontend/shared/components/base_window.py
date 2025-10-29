@@ -80,6 +80,36 @@ class BaseWindow(tk.Tk, ABC):
         # Bind events
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
+        # Setup keyboard shortcuts
+        self._setup_keyboard_shortcuts()
+        
+    def _setup_keyboard_shortcuts(self):
+        """Setup global keyboard shortcuts"""
+        # Refresh: F5 or Ctrl+R
+        self.bind('<F5>', lambda e: self.refresh_view())
+        self.bind('<Control-r>', lambda e: self.refresh_view())
+        
+        # Clear logs: Ctrl+L
+        self.bind('<Control-l>', lambda e: self.clear_logs() if hasattr(self, 'clear_logs') else None)
+        
+        # Toggle sidebar: Ctrl+B
+        self.bind('<Control-b>', lambda e: self.toggle_sidebar())
+        
+        # Close window: Escape (for dialogs)
+        self.bind('<Escape>', lambda e: self._handle_escape())
+        
+        # Help: F1
+        self.bind('<F1>', lambda e: self.show_help())
+        
+        # Settings: Ctrl+,
+        self.bind('<Control-comma>', lambda e: self.show_settings())
+    
+    def _handle_escape(self):
+        """Handle Escape key - close if dialog, otherwise do nothing"""
+        # Only close if this is a Toplevel (dialog), not main window
+        if isinstance(self, tk.Toplevel):
+            self.destroy()
+        
     def center_window(self, width: int, height: int):
         """Center window on screen"""
         screen_width = self.winfo_screenwidth()
@@ -377,6 +407,121 @@ class BaseWindow(tk.Tk, ABC):
     def setup_main_content(self):
         """Setup main content area"""
         pass
+    
+    # Utility functions
+    
+    def make_treeview_sortable(self, treeview: ttk.Treeview):
+        """
+        Make a Treeview sortable by clicking column headers
+        
+        Args:
+            treeview: ttk.Treeview widget to make sortable
+            
+        Usage:
+            tree = ttk.Treeview(parent, columns=('col1', 'col2'))
+            self.make_treeview_sortable(tree)
+        """
+        def treeview_sort_column(col, reverse):
+            """Sort tree contents when a column header is clicked"""
+            # Get all items
+            items = [(treeview.set(k, col), k) for k in treeview.get_children('')]
+            
+            # Sort items
+            try:
+                # Try numeric sort first
+                items.sort(key=lambda t: float(t[0].replace(',', '').replace('%', '').replace('MB', '').replace('KB', '').strip()), reverse=reverse)
+            except (ValueError, AttributeError):
+                # Fall back to string sort
+                items.sort(reverse=reverse)
+            
+            # Rearrange items in sorted positions
+            for index, (val, k) in enumerate(items):
+                treeview.move(k, '', index)
+            
+            # Reverse sort next time
+            treeview.heading(col, command=lambda: treeview_sort_column(col, not reverse))
+            
+            # Update visual indicator in heading
+            heading_text = treeview.heading(col)['text']
+            # Remove existing arrows
+            heading_text = heading_text.replace(' ▲', '').replace(' ▼', '')
+            # Add new arrow
+            arrow = ' ▼' if reverse else ' ▲'
+            treeview.heading(col, text=heading_text + arrow)
+        
+        # Bind sort function to all columns
+        for col in ['#0'] + list(treeview['columns']):
+            if col == '#0':
+                treeview.heading(col, command=lambda c=col: treeview_sort_column(c, False))
+            else:
+                treeview.heading(col, command=lambda c=col: treeview_sort_column(c, False))
+    
+    def show_progress_dialog(self, title: str, message: str, max_value: int = 100):
+        """
+        Show a modal progress dialog with progress bar
+        
+        Args:
+            title: Dialog title
+            message: Message to display
+            max_value: Maximum progress value (default 100)
+            
+        Returns:
+            Tuple of (dialog, progress_var, progress_bar, status_label)
+            
+        Usage:
+            dialog, progress_var, pbar, status = self.show_progress_dialog("Export", "Exporting dataset...")
+            for i in range(100):
+                progress_var.set(i)
+                status.config(text=f"Processing item {i}...")
+                dialog.update()
+            dialog.destroy()
+        """
+        dialog = tk.Toplevel(self)
+        dialog.title(title)
+        dialog.geometry("400x150")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Center dialog
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (400 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (150 // 2)
+        dialog.geometry(f"400x150+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Message
+        ttk.Label(
+            main_frame,
+            text=message,
+            font=("Helvetica", 11, "bold")
+        ).pack(pady=(0, 15))
+        
+        # Progress bar
+        progress_var = tk.IntVar(value=0)
+        progress_bar = ttk.Progressbar(
+            main_frame,
+            variable=progress_var,
+            maximum=max_value,
+            mode='determinate',
+            length=350
+        )
+        progress_bar.pack(pady=(0, 10))
+        
+        # Status label
+        status_label = ttk.Label(
+            main_frame,
+            text="Initializing...",
+            font=("Helvetica", 9),
+            foreground='#666666'
+        )
+        status_label.pack()
+        
+        dialog.update()
+        
+        return dialog, progress_var, progress_bar, status_label
     
     # Standard menu actions (can be overridden)
     

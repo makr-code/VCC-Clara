@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Dict, Any
 from datetime import datetime
+import psutil
+from collections import deque
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -54,6 +56,26 @@ class TrainingFrontend(BaseWindow):
         
         # Start connection check
         self.check_connection()
+        
+        # Setup feature-specific keyboard shortcuts
+        self._setup_training_shortcuts()
+    
+    def _setup_training_shortcuts(self):
+        """Setup Training Frontend specific keyboard shortcuts"""
+        # New job: Ctrl+N
+        self.bind('<Control-n>', lambda e: self.create_job_dialog())
+        
+        # Cancel job: Ctrl+K
+        self.bind('<Control-k>', lambda e: self.cancel_selected_job())
+        
+        # View metrics: Ctrl+M
+        self.bind('<Control-m>', lambda e: self.view_job_metrics())
+        
+        # Config manager: Ctrl+Shift+C
+        self.bind('<Control-Shift-C>', lambda e: self.show_config_manager())
+        
+        # Output files: Ctrl+O
+        self.bind('<Control-o>', lambda e: self.show_output_files())
     
     def setup_toolbar_actions(self):
         """Setup toolbar buttons"""
@@ -177,6 +199,9 @@ class TrainingFrontend(BaseWindow):
         
         tree_scroll_y.config(command=self.job_tree.yview)
         tree_scroll_x.config(command=self.job_tree.xview)
+        
+        # Make tree sortable
+        self.make_treeview_sortable(self.job_tree)
         
         # Bind selection
         self.job_tree.bind("<<TreeviewSelect>>", self.on_job_select)
@@ -905,8 +930,241 @@ class TrainingFrontend(BaseWindow):
         ).pack(side=tk.RIGHT, padx=5)
     
     def show_metrics_dashboard(self):
-        """Show metrics dashboard"""
-        self.show_info("Metrics Dashboard", "Dashboard not yet implemented")
+        """Show real-time system metrics dashboard"""
+        if not MATPLOTLIB_AVAILABLE:
+            self.show_error("Matplotlib Required", 
+                          "Please install matplotlib: pip install matplotlib")
+            return
+        
+        # Create window
+        window = tk.Toplevel(self)
+        window.title("Real-Time System Metrics Dashboard")
+        window.geometry("1400x900")
+        
+        # Main container
+        main_frame = ttk.Frame(window, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title = ttk.Label(
+            main_frame,
+            text="📊 Real-Time System Metrics",
+            font=("Helvetica", 16, "bold")
+        )
+        title.pack(pady=(0, 10))
+        
+        # Control frame
+        control_frame = ttk.Frame(main_frame)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Refresh interval
+        ttk.Label(control_frame, text="Refresh Interval:").pack(side=tk.LEFT, padx=(0, 5))
+        interval_var = tk.StringVar(value="2")
+        interval_combo = ttk.Combobox(
+            control_frame,
+            textvariable=interval_var,
+            values=["1", "2", "5", "10"],
+            width=5,
+            state="readonly"
+        )
+        interval_combo.pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Label(control_frame, text="seconds").pack(side=tk.LEFT, padx=(0, 20))
+        
+        # Auto-refresh toggle
+        auto_refresh_var = tk.BooleanVar(value=True)
+        auto_refresh_check = ttk.Checkbutton(
+            control_frame,
+            text="Auto-Refresh",
+            variable=auto_refresh_var
+        )
+        auto_refresh_check.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Manual refresh button
+        refresh_btn = ttk.Button(
+            control_frame,
+            text="🔄 Refresh Now",
+            command=lambda: update_metrics()
+        )
+        refresh_btn.pack(side=tk.LEFT)
+        
+        # Data storage (keep last 60 data points)
+        max_points = 60
+        time_data = deque(maxlen=max_points)
+        cpu_data = deque(maxlen=max_points)
+        memory_data = deque(maxlen=max_points)
+        disk_read_data = deque(maxlen=max_points)
+        disk_write_data = deque(maxlen=max_points)
+        
+        # Create figure with 4 subplots
+        fig = Figure(figsize=(14, 8), dpi=80)
+        
+        # CPU subplot
+        ax1 = fig.add_subplot(2, 2, 1)
+        ax1.set_title('CPU Usage (%)', fontweight='bold')
+        ax1.set_xlabel('Time (s)')
+        ax1.set_ylabel('Usage (%)')
+        ax1.set_ylim(0, 100)
+        ax1.grid(True, alpha=0.3)
+        line1, = ax1.plot([], [], 'b-', linewidth=2, label='CPU')
+        ax1.legend()
+        
+        # Memory subplot
+        ax2 = fig.add_subplot(2, 2, 2)
+        ax2.set_title('Memory Usage (%)', fontweight='bold')
+        ax2.set_xlabel('Time (s)')
+        ax2.set_ylabel('Usage (%)')
+        ax2.set_ylim(0, 100)
+        ax2.grid(True, alpha=0.3)
+        line2, = ax2.plot([], [], 'g-', linewidth=2, label='Memory')
+        ax2.legend()
+        
+        # Disk I/O subplot
+        ax3 = fig.add_subplot(2, 2, 3)
+        ax3.set_title('Disk I/O (MB/s)', fontweight='bold')
+        ax3.set_xlabel('Time (s)')
+        ax3.set_ylabel('MB/s')
+        ax3.grid(True, alpha=0.3)
+        line3, = ax3.plot([], [], 'r-', linewidth=2, label='Read')
+        line4, = ax3.plot([], [], 'orange', linewidth=2, label='Write')
+        ax3.legend()
+        
+        # System info subplot (text-based)
+        ax4 = fig.add_subplot(2, 2, 4)
+        ax4.axis('off')
+        info_text = ax4.text(0.05, 0.95, '', verticalalignment='top', 
+                            fontfamily='monospace', fontsize=10)
+        
+        fig.tight_layout(pad=2.0)
+        
+        # Embed figure in tkinter
+        canvas_frame = ttk.Frame(main_frame)
+        canvas_frame.pack(fill=tk.BOTH, expand=True)
+        
+        canvas = FigureCanvasTkAgg(fig, master=canvas_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+        # Track last disk I/O for delta calculation
+        last_disk_io = {'read': 0, 'write': 0, 'time': time.time()}
+        
+        def update_metrics():
+            """Update all metrics and charts"""
+            try:
+                current_time = time.time()
+                
+                # Get CPU and Memory
+                cpu_percent = psutil.cpu_percent(interval=0.1)
+                memory = psutil.virtual_memory()
+                
+                # Get Disk I/O
+                disk_io = psutil.disk_io_counters()
+                time_delta = current_time - last_disk_io['time']
+                
+                if time_delta > 0:
+                    read_mb_s = (disk_io.read_bytes - last_disk_io['read']) / (1024 * 1024) / time_delta
+                    write_mb_s = (disk_io.write_bytes - last_disk_io['write']) / (1024 * 1024) / time_delta
+                else:
+                    read_mb_s = 0
+                    write_mb_s = 0
+                
+                last_disk_io['read'] = disk_io.read_bytes
+                last_disk_io['write'] = disk_io.write_bytes
+                last_disk_io['time'] = current_time
+                
+                # Append data
+                time_data.append(len(time_data))
+                cpu_data.append(cpu_percent)
+                memory_data.append(memory.percent)
+                disk_read_data.append(max(0, read_mb_s))
+                disk_write_data.append(max(0, write_mb_s))
+                
+                # Update CPU chart
+                line1.set_data(list(time_data), list(cpu_data))
+                ax1.set_xlim(max(0, len(time_data) - max_points), len(time_data))
+                
+                # Update Memory chart
+                line2.set_data(list(time_data), list(memory_data))
+                ax2.set_xlim(max(0, len(time_data) - max_points), len(time_data))
+                
+                # Update Disk I/O chart
+                line3.set_data(list(time_data), list(disk_read_data))
+                line4.set_data(list(time_data), list(disk_write_data))
+                ax3.set_xlim(max(0, len(time_data) - max_points), len(time_data))
+                max_io = max(max(disk_read_data, default=10), max(disk_write_data, default=10))
+                ax3.set_ylim(0, max_io * 1.2)
+                
+                # Update system info text
+                cpu_count = psutil.cpu_count()
+                cpu_freq = psutil.cpu_freq()
+                disk_usage = psutil.disk_usage('/')
+                net_io = psutil.net_io_counters()
+                
+                info_str = f"""SYSTEM INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CPU:
+  Cores: {cpu_count} ({psutil.cpu_count(logical=False)} physical)
+  Frequency: {cpu_freq.current:.0f} MHz
+  Usage: {cpu_percent:.1f}%
+
+MEMORY:
+  Total: {memory.total / (1024**3):.1f} GB
+  Used: {memory.used / (1024**3):.1f} GB
+  Available: {memory.available / (1024**3):.1f} GB
+  Usage: {memory.percent:.1f}%
+
+DISK:
+  Total: {disk_usage.total / (1024**3):.1f} GB
+  Used: {disk_usage.used / (1024**3):.1f} GB
+  Free: {disk_usage.free / (1024**3):.1f} GB
+  Usage: {disk_usage.percent:.1f}%
+
+NETWORK:
+  Sent: {net_io.bytes_sent / (1024**3):.2f} GB
+  Received: {net_io.bytes_recv / (1024**3):.2f} GB
+  Packets Sent: {net_io.packets_sent:,}
+  Packets Recv: {net_io.packets_recv:,}
+"""
+                info_text.set_text(info_str)
+                
+                # Redraw canvas
+                canvas.draw()
+                
+            except Exception as e:
+                print(f"Error updating metrics: {e}")
+        
+        def auto_refresh_loop():
+            """Auto-refresh loop running in background"""
+            while window.winfo_exists():
+                if auto_refresh_var.get():
+                    try:
+                        update_metrics()
+                    except Exception as e:
+                        print(f"Auto-refresh error: {e}")
+                
+                try:
+                    interval = float(interval_var.get())
+                except:
+                    interval = 2.0
+                
+                time.sleep(interval)
+        
+        # Initial update
+        update_metrics()
+        
+        # Start auto-refresh thread
+        refresh_thread = threading.Thread(target=auto_refresh_loop, daemon=True)
+        refresh_thread.start()
+        
+        # Close button
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        ttk.Button(
+            btn_frame,
+            text="Close",
+            command=window.destroy
+        ).pack(side=tk.RIGHT)
     
     # Sidebar actions
     def show_all_jobs(self):
@@ -1221,7 +1479,8 @@ output:
         filter_frame = ttk.Frame(left_frame)
         filter_frame.pack(fill=tk.X, pady=(0, 10))
         
-        ttk.Label(filter_frame, text="Filter:").pack(side=tk.LEFT, padx=(0, 5))
+        # File type filter
+        ttk.Label(filter_frame, text="Type:").pack(side=tk.LEFT, padx=(0, 5))
         
         filter_var = tk.StringVar(value="all")
         filter_combo = ttk.Combobox(
@@ -1231,7 +1490,13 @@ output:
             state="readonly",
             width=15
         )
-        filter_combo.pack(side=tk.LEFT)
+        filter_combo.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Search bar
+        ttk.Label(filter_frame, text="Search:").pack(side=tk.LEFT, padx=(5, 5))
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(filter_frame, textvariable=search_var, width=25)
+        search_entry.pack(side=tk.LEFT)
         
         # File tree
         tree_container = ttk.Frame(left_frame)
@@ -1285,6 +1550,7 @@ output:
                 return
             
             filter_ext = filter_var.get()
+            search_term = search_var.get().lower()
             
             def add_directory(parent, path):
                 """Recursively add directory contents"""
@@ -1292,13 +1558,19 @@ output:
                     items = sorted(path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower()))
                     
                     for item in items:
-                        # Apply filter
+                        # Apply file type filter
                         if filter_ext != "all" and item.is_file():
                             if not item.name.endswith(filter_ext):
                                 continue
                         
+                        # Apply search filter
+                        if search_term and search_term not in item.name.lower():
+                            # For directories, check if any child matches (don't skip yet)
+                            if item.is_file():
+                                continue
+                        
                         if item.is_dir():
-                            # Add folder
+                            # Add folder (temporarily, may be removed if empty)
                             folder_node = file_tree.insert(
                                 parent,
                                 tk.END,
@@ -1308,6 +1580,10 @@ output:
                             )
                             # Recursively add contents
                             add_directory(folder_node, item)
+                            
+                            # Remove empty folders when searching
+                            if search_term and not file_tree.get_children(folder_node):
+                                file_tree.delete(folder_node)
                         else:
                             # Add file
                             size_mb = item.stat().st_size / (1024 * 1024)
@@ -1414,6 +1690,7 @@ output:
         # Bind events
         file_tree.bind('<<TreeviewSelect>>', on_file_select)
         filter_combo.bind('<<ComboboxSelected>>', lambda e: load_files())
+        search_entry.bind('<KeyRelease>', lambda e: load_files())  # Real-time search
         
         # Buttons
         button_frame = ttk.Frame(window)

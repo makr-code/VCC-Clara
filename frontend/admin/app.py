@@ -11,6 +11,8 @@ from pathlib import Path
 from datetime import datetime
 import subprocess
 import time
+import psutil
+from collections import deque
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -21,6 +23,16 @@ from frontend.shared.api.training_client import TrainingAPIClient
 from frontend.shared.api.dataset_client import DatasetAPIClient
 import threading
 import time
+
+# Matplotlib imports for real-time charts
+try:
+    import matplotlib
+    matplotlib.use('TkAgg')
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
 
 
 class AdminFrontend(BaseWindow):
@@ -51,6 +63,26 @@ class AdminFrontend(BaseWindow):
         
         # Start monitoring
         self.start_service_monitoring()
+        
+        # Setup feature-specific keyboard shortcuts
+        self._setup_admin_shortcuts()
+    
+    def _setup_admin_shortcuts(self):
+        """Setup Admin Frontend specific keyboard shortcuts"""
+        # Start all services: Ctrl+Shift+S
+        self.bind('<Control-Shift-S>', lambda e: self.start_all_services())
+        
+        # Stop all services: Ctrl+Shift+X
+        self.bind('<Control-Shift-X>', lambda e: self.stop_all_services())
+        
+        # Restart all services: Ctrl+Shift+R
+        self.bind('<Control-Shift-R>', lambda e: self.restart_all_services())
+        
+        # Database management: Ctrl+D
+        self.bind('<Control-d>', lambda e: self.show_database())
+        
+        # Configuration: Ctrl+Shift+C
+        self.bind('<Control-Shift-C>', lambda e: self.show_configuration())
     
     def setup_toolbar_actions(self):
         """Setup toolbar buttons"""
@@ -499,12 +531,461 @@ class AdminFrontend(BaseWindow):
         threading.Thread(target=restart_all, daemon=True).start()
     
     def show_metrics_dashboard(self):
-        """Show detailed metrics dashboard"""
-        self.show_info("Metrics Dashboard", "Detailed metrics dashboard not yet implemented")
+        """Show real-time system metrics dashboard with live charts"""
+        if not MATPLOTLIB_AVAILABLE:
+            self.show_error("Matplotlib Required", 
+                          "Please install matplotlib: pip install matplotlib")
+            return
+        
+        # Create window
+        window = tk.Toplevel(self)
+        window.title("Real-Time System Metrics Dashboard")
+        window.geometry("1400x900")
+        
+        # Main container
+        main_frame = ttk.Frame(window, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title = ttk.Label(
+            main_frame,
+            text="📊 Real-Time System Metrics",
+            font=("Helvetica", 16, "bold")
+        )
+        title.pack(pady=(0, 10))
+        
+        # Control frame
+        control_frame = ttk.Frame(main_frame)
+        control_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Refresh interval
+        ttk.Label(control_frame, text="Refresh Interval:").pack(side=tk.LEFT, padx=(0, 5))
+        interval_var = tk.StringVar(value="2")
+        interval_combo = ttk.Combobox(
+            control_frame,
+            textvariable=interval_var,
+            values=["1", "2", "5", "10"],
+            width=5,
+            state="readonly"
+        )
+        interval_combo.pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Label(control_frame, text="seconds").pack(side=tk.LEFT, padx=(0, 20))
+        
+        # Auto-refresh toggle
+        auto_refresh_var = tk.BooleanVar(value=True)
+        auto_refresh_check = ttk.Checkbutton(
+            control_frame,
+            text="Auto-Refresh",
+            variable=auto_refresh_var
+        )
+        auto_refresh_check.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Manual refresh button
+        refresh_btn = ttk.Button(
+            control_frame,
+            text="🔄 Refresh Now",
+            command=lambda: update_metrics()
+        )
+        refresh_btn.pack(side=tk.LEFT)
+        
+        # Data storage (keep last 60 data points)
+        max_points = 60
+        time_data = deque(maxlen=max_points)
+        cpu_data = deque(maxlen=max_points)
+        memory_data = deque(maxlen=max_points)
+        disk_read_data = deque(maxlen=max_points)
+        disk_write_data = deque(maxlen=max_points)
+        
+        # Create figure with 4 subplots
+        fig = Figure(figsize=(14, 8), dpi=80)
+        
+        # CPU subplot
+        ax1 = fig.add_subplot(2, 2, 1)
+        ax1.set_title('CPU Usage (%)', fontweight='bold')
+        ax1.set_xlabel('Time (s)')
+        ax1.set_ylabel('Usage (%)')
+        ax1.set_ylim(0, 100)
+        ax1.grid(True, alpha=0.3)
+        line1, = ax1.plot([], [], 'b-', linewidth=2, label='CPU')
+        ax1.legend()
+        
+        # Memory subplot
+        ax2 = fig.add_subplot(2, 2, 2)
+        ax2.set_title('Memory Usage (%)', fontweight='bold')
+        ax2.set_xlabel('Time (s)')
+        ax2.set_ylabel('Usage (%)')
+        ax2.set_ylim(0, 100)
+        ax2.grid(True, alpha=0.3)
+        line2, = ax2.plot([], [], 'g-', linewidth=2, label='Memory')
+        ax2.legend()
+        
+        # Disk I/O subplot
+        ax3 = fig.add_subplot(2, 2, 3)
+        ax3.set_title('Disk I/O (MB/s)', fontweight='bold')
+        ax3.set_xlabel('Time (s)')
+        ax3.set_ylabel('MB/s')
+        ax3.grid(True, alpha=0.3)
+        line3, = ax3.plot([], [], 'r-', linewidth=2, label='Read')
+        line4, = ax3.plot([], [], 'orange', linewidth=2, label='Write')
+        ax3.legend()
+        
+        # System info subplot (text-based)
+        ax4 = fig.add_subplot(2, 2, 4)
+        ax4.axis('off')
+        info_text = ax4.text(0.05, 0.95, '', verticalalignment='top', 
+                            fontfamily='monospace', fontsize=10)
+        
+        fig.tight_layout(pad=2.0)
+        
+        # Embed figure in tkinter
+        canvas_frame = ttk.Frame(main_frame)
+        canvas_frame.pack(fill=tk.BOTH, expand=True)
+        
+        canvas = FigureCanvasTkAgg(fig, master=canvas_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+        # Track last disk I/O for delta calculation
+        last_disk_io = {'read': 0, 'write': 0, 'time': time.time()}
+        
+        def update_metrics():
+            """Update all metrics and charts"""
+            try:
+                current_time = time.time()
+                
+                # Get CPU and Memory
+                cpu_percent = psutil.cpu_percent(interval=0.1)
+                memory = psutil.virtual_memory()
+                
+                # Get Disk I/O
+                disk_io = psutil.disk_io_counters()
+                time_delta = current_time - last_disk_io['time']
+                
+                if time_delta > 0:
+                    read_mb_s = (disk_io.read_bytes - last_disk_io['read']) / (1024 * 1024) / time_delta
+                    write_mb_s = (disk_io.write_bytes - last_disk_io['write']) / (1024 * 1024) / time_delta
+                else:
+                    read_mb_s = 0
+                    write_mb_s = 0
+                
+                last_disk_io['read'] = disk_io.read_bytes
+                last_disk_io['write'] = disk_io.write_bytes
+                last_disk_io['time'] = current_time
+                
+                # Append data
+                time_data.append(len(time_data))
+                cpu_data.append(cpu_percent)
+                memory_data.append(memory.percent)
+                disk_read_data.append(max(0, read_mb_s))
+                disk_write_data.append(max(0, write_mb_s))
+                
+                # Update CPU chart
+                line1.set_data(list(time_data), list(cpu_data))
+                ax1.set_xlim(max(0, len(time_data) - max_points), len(time_data))
+                
+                # Update Memory chart
+                line2.set_data(list(time_data), list(memory_data))
+                ax2.set_xlim(max(0, len(time_data) - max_points), len(time_data))
+                
+                # Update Disk I/O chart
+                line3.set_data(list(time_data), list(disk_read_data))
+                line4.set_data(list(time_data), list(disk_write_data))
+                ax3.set_xlim(max(0, len(time_data) - max_points), len(time_data))
+                max_io = max(max(disk_read_data, default=10), max(disk_write_data, default=10))
+                ax3.set_ylim(0, max_io * 1.2)
+                
+                # Update system info text
+                cpu_count = psutil.cpu_count()
+                cpu_freq = psutil.cpu_freq()
+                disk_usage = psutil.disk_usage('/')
+                net_io = psutil.net_io_counters()
+                
+                info_str = f"""SYSTEM INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CPU:
+  Cores: {cpu_count} ({psutil.cpu_count(logical=False)} physical)
+  Frequency: {cpu_freq.current:.0f} MHz
+  Usage: {cpu_percent:.1f}%
+
+MEMORY:
+  Total: {memory.total / (1024**3):.1f} GB
+  Used: {memory.used / (1024**3):.1f} GB
+  Available: {memory.available / (1024**3):.1f} GB
+  Usage: {memory.percent:.1f}%
+
+DISK:
+  Total: {disk_usage.total / (1024**3):.1f} GB
+  Used: {disk_usage.used / (1024**3):.1f} GB
+  Free: {disk_usage.free / (1024**3):.1f} GB
+  Usage: {disk_usage.percent:.1f}%
+
+NETWORK:
+  Sent: {net_io.bytes_sent / (1024**3):.2f} GB
+  Received: {net_io.bytes_recv / (1024**3):.2f} GB
+  Packets Sent: {net_io.packets_sent:,}
+  Packets Recv: {net_io.packets_recv:,}
+"""
+                info_text.set_text(info_str)
+                
+                # Redraw canvas
+                canvas.draw()
+                
+            except Exception as e:
+                print(f"Error updating metrics: {e}")
+        
+        def auto_refresh_loop():
+            """Auto-refresh loop running in background"""
+            while window.winfo_exists():
+                if auto_refresh_var.get():
+                    try:
+                        update_metrics()
+                    except Exception as e:
+                        print(f"Auto-refresh error: {e}")
+                
+                try:
+                    interval = float(interval_var.get())
+                except:
+                    interval = 2.0
+                
+                time.sleep(interval)
+        
+        # Initial update
+        update_metrics()
+        
+        # Start auto-refresh thread
+        refresh_thread = threading.Thread(target=auto_refresh_loop, daemon=True)
+        refresh_thread.start()
+        
+        # Close button
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        ttk.Button(
+            btn_frame,
+            text="Close",
+            command=window.destroy
+        ).pack(side=tk.RIGHT)
     
     def show_system_logs(self):
-        """Show system logs dialog"""
-        self.show_info("System Logs", "Log viewer already visible in main panel")
+        """Show enhanced system logs dialog with filtering"""
+        # Create window
+        window = tk.Toplevel(self)
+        window.title("System Logs - Enhanced Viewer")
+        window.geometry("1000x700")
+        
+        # Main container
+        main_frame = ttk.Frame(window, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title = ttk.Label(
+            main_frame,
+            text="📋 System Logs",
+            font=("Helvetica", 16, "bold")
+        )
+        title.pack(pady=(0, 15))
+        
+        # Filter controls
+        filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding=10)
+        filter_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Level filter
+        level_frame = ttk.Frame(filter_frame)
+        level_frame.pack(side=tk.LEFT, padx=(0, 20))
+        
+        ttk.Label(level_frame, text="Level:").pack(side=tk.LEFT, padx=(0, 5))
+        
+        level_var = tk.StringVar(value="ALL")
+        levels = ["ALL", "INFO", "WARNING", "ERROR", "DEBUG"]
+        level_combo = ttk.Combobox(
+            level_frame,
+            textvariable=level_var,
+            values=levels,
+            width=12,
+            state='readonly'
+        )
+        level_combo.pack(side=tk.LEFT)
+        
+        # Search filter
+        search_frame = ttk.Frame(filter_frame)
+        search_frame.pack(side=tk.LEFT, padx=(0, 20))
+        
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
+        search_entry.pack(side=tk.LEFT)
+        
+        # Auto-scroll checkbox
+        autoscroll_var = tk.BooleanVar(value=True)
+        autoscroll_cb = ttk.Checkbutton(
+            filter_frame,
+            text="Auto-scroll",
+            variable=autoscroll_var
+        )
+        autoscroll_cb.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Action buttons
+        ttk.Button(
+            filter_frame,
+            text="🔄 Refresh",
+            command=lambda: update_log_view()
+        ).pack(side=tk.RIGHT, padx=(5, 0))
+        
+        ttk.Button(
+            filter_frame,
+            text="💾 Export",
+            command=lambda: export_logs()
+        ).pack(side=tk.RIGHT, padx=(5, 0))
+        
+        ttk.Button(
+            filter_frame,
+            text="🗑️ Clear",
+            command=lambda: clear_logs()
+        ).pack(side=tk.RIGHT)
+        
+        # Log viewer
+        log_frame = ttk.Frame(main_frame)
+        log_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Scrollbars
+        log_scroll_y = ttk.Scrollbar(log_frame)
+        log_scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        log_scroll_x = ttk.Scrollbar(log_frame, orient=tk.HORIZONTAL)
+        log_scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        # Text widget with colors
+        log_text = tk.Text(
+            log_frame,
+            wrap=tk.NONE,
+            font=("Consolas", 9),
+            yscrollcommand=log_scroll_y.set,
+            xscrollcommand=log_scroll_x.set
+        )
+        log_text.pack(fill=tk.BOTH, expand=True)
+        
+        log_scroll_y.config(command=log_text.yview)
+        log_scroll_x.config(command=log_text.xview)
+        
+        # Configure tags for log levels
+        log_text.tag_config("INFO", foreground="#2196F3")
+        log_text.tag_config("WARNING", foreground="#FF9800")
+        log_text.tag_config("ERROR", foreground="#F44336", font=("Consolas", 9, "bold"))
+        log_text.tag_config("DEBUG", foreground="#9E9E9E")
+        log_text.tag_config("TIMESTAMP", foreground="#666666")
+        
+        def update_log_view():
+            """Update log view with filters applied"""
+            log_text.config(state=tk.NORMAL)
+            log_text.delete(1.0, tk.END)
+            
+            # Get log content from main log viewer
+            if hasattr(self, 'log_viewer'):
+                all_logs = self.log_viewer.get(1.0, tk.END).strip().split('\n')
+            else:
+                all_logs = []
+            
+            # Apply filters
+            level_filter = level_var.get()
+            search_filter = search_var.get().lower()
+            
+            filtered_count = 0
+            for log_line in all_logs:
+                if not log_line.strip():
+                    continue
+                
+                # Level filter
+                if level_filter != "ALL":
+                    if f"[{level_filter}]" not in log_line:
+                        continue
+                
+                # Search filter
+                if search_filter and search_filter not in log_line.lower():
+                    continue
+                
+                # Determine log level for coloring
+                level_tag = "INFO"
+                if "[ERROR]" in log_line:
+                    level_tag = "ERROR"
+                elif "[WARNING]" in log_line:
+                    level_tag = "WARNING"
+                elif "[DEBUG]" in log_line:
+                    level_tag = "DEBUG"
+                
+                # Insert with color
+                log_text.insert(tk.END, log_line + "\n", level_tag)
+                filtered_count += 1
+            
+            log_text.config(state=tk.DISABLED)
+            
+            # Auto-scroll to bottom
+            if autoscroll_var.get():
+                log_text.see(tk.END)
+            
+            # Update status
+            status_label.config(
+                text=f"Showing {filtered_count} logs (Level: {level_filter}, Search: '{search_filter or 'none'}')"
+            )
+        
+        def export_logs():
+            """Export filtered logs to file"""
+            from tkinter import filedialog
+            from datetime import datetime
+            
+            filename = filedialog.asksaveasfilename(
+                parent=window,
+                title="Export Logs",
+                defaultextension=".log",
+                initialfile=f"system_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+                filetypes=[("Log files", "*.log"), ("Text files", "*.txt"), ("All files", "*.*")]
+            )
+            
+            if filename:
+                try:
+                    content = log_text.get(1.0, tk.END)
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        f.write(content)
+                    messagebox.showinfo("Export Success", f"Logs exported to:\n{filename}", parent=window)
+                except Exception as e:
+                    messagebox.showerror("Export Error", f"Failed to export logs:\n{e}", parent=window)
+        
+        def clear_logs():
+            """Clear all logs"""
+            if messagebox.askyesno("Confirm", "Clear all system logs?", parent=window):
+                log_text.config(state=tk.NORMAL)
+                log_text.delete(1.0, tk.END)
+                log_text.config(state=tk.DISABLED)
+                if hasattr(self, 'log_viewer'):
+                    self.log_viewer.delete(1.0, tk.END)
+                status_label.config(text="Logs cleared")
+        
+        # Status bar
+        status_frame = ttk.Frame(main_frame)
+        status_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        status_label = ttk.Label(
+            status_frame,
+            text="Loading logs...",
+            font=("Helvetica", 9),
+            foreground="#666666"
+        )
+        status_label.pack(side=tk.LEFT)
+        
+        # Close button
+        ttk.Button(
+            status_frame,
+            text="❌ Close",
+            command=window.destroy
+        ).pack(side=tk.RIGHT)
+        
+        # Bind filter updates
+        level_combo.bind('<<ComboboxSelected>>', lambda e: update_log_view())
+        search_entry.bind('<KeyRelease>', lambda e: update_log_view())
+        
+        # Initial load
+        update_log_view()
     
     # Service control
     def start_service(self, service_id: str):
@@ -692,6 +1173,15 @@ class AdminFrontend(BaseWindow):
             font=("Helvetica", 12, "bold")
         ).pack(pady=(0, 10))
         
+        # Search bar
+        search_frame = ttk.Frame(left_panel)
+        search_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var, width=25)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
         # Config directories to scan
         config_dirs = [
             ('Backend Configs', 'backend/'),
@@ -723,25 +1213,46 @@ class AdminFrontend(BaseWindow):
         file_tree.heading('Type', text='Type')
         file_tree.heading('Size', text='Size')
         
-        # Populate file tree
-        for dir_name, dir_path in config_dirs:
-            full_path = Path(project_root) / dir_path
-            if full_path.exists():
-                parent = file_tree.insert('', tk.END, text=f"📁 {dir_name}", values=('Folder', ''))
-                
-                # Add config files
-                for config_file in sorted(full_path.rglob('*.yaml')) + sorted(full_path.rglob('*.yml')) + sorted(full_path.rglob('*.json')):
-                    if config_file.is_file():
-                        size_kb = config_file.stat().st_size / 1024
-                        file_type = config_file.suffix.upper()[1:]
-                        
-                        file_tree.insert(
-                            parent,
-                            tk.END,
-                            text=f"📄 {config_file.name}",
-                            values=(file_type, f"{size_kb:.1f} KB"),
-                            tags=(str(config_file),)
-                        )
+        def populate_file_tree():
+            """Populate file tree with optional search filter"""
+            file_tree.delete(*file_tree.get_children())
+            search_term = search_var.get().lower()
+            
+            # Populate file tree
+            for dir_name, dir_path in config_dirs:
+                full_path = Path(project_root) / dir_path
+                if full_path.exists():
+                    parent = file_tree.insert('', tk.END, text=f"📁 {dir_name}", values=('Folder', ''))
+                    
+                    has_children = False
+                    # Add config files
+                    for config_file in sorted(full_path.rglob('*.yaml')) + sorted(full_path.rglob('*.yml')) + sorted(full_path.rglob('*.json')):
+                        if config_file.is_file():
+                            # Apply search filter
+                            if search_term and search_term not in config_file.name.lower():
+                                continue
+                            
+                            has_children = True
+                            size_kb = config_file.stat().st_size / 1024
+                            file_type = config_file.suffix.upper()[1:]
+                            
+                            file_tree.insert(
+                                parent,
+                                tk.END,
+                                text=f"📄 {config_file.name}",
+                                values=(file_type, f"{size_kb:.1f} KB"),
+                                tags=(str(config_file),)
+                            )
+                    
+                    # Remove empty folders when searching
+                    if search_term and not has_children:
+                        file_tree.delete(parent)
+        
+        # Initial population
+        populate_file_tree()
+        
+        # Bind search
+        search_entry.bind('<KeyRelease>', lambda e: populate_file_tree())
         
         # Right panel: Config editor
         right_panel = ttk.Frame(paned)
@@ -1198,9 +1709,230 @@ class AdminFrontend(BaseWindow):
         self.show_info("Metrics", "Full metrics dashboard not yet implemented")
     
     def show_audit_log(self):
-        """Show audit log"""
-        self.add_log("INFO", "Viewing audit log")
-        self.show_info("Audit Log", "Audit log viewer not yet implemented")
+        """Show audit log viewer"""
+        self.add_log("INFO", "Opening Audit Log Viewer")
+        
+        # Create window
+        window = tk.Toplevel(self)
+        window.title("Audit Log - User Actions Tracking")
+        window.geometry("1100x700")
+        
+        # Main container
+        main_frame = ttk.Frame(window, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title = ttk.Label(
+            main_frame,
+            text="🔍 Audit Log",
+            font=("Helvetica", 16, "bold")
+        )
+        title.pack(pady=(0, 15))
+        
+        # Filter controls
+        filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding=10)
+        filter_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Action type filter
+        action_frame = ttk.Frame(filter_frame)
+        action_frame.pack(side=tk.LEFT, padx=(0, 20))
+        
+        ttk.Label(action_frame, text="Action:").pack(side=tk.LEFT, padx=(0, 5))
+        
+        action_var = tk.StringVar(value="ALL")
+        actions = ["ALL", "CREATE", "UPDATE", "DELETE", "EXPORT", "LOGIN", "LOGOUT", "CONFIG_CHANGE"]
+        action_combo = ttk.Combobox(
+            action_frame,
+            textvariable=action_var,
+            values=actions,
+            width=15,
+            state='readonly'
+        )
+        action_combo.pack(side=tk.LEFT)
+        
+        # User filter
+        user_frame = ttk.Frame(filter_frame)
+        user_frame.pack(side=tk.LEFT, padx=(0, 20))
+        
+        ttk.Label(user_frame, text="User:").pack(side=tk.LEFT, padx=(0, 5))
+        
+        user_var = tk.StringVar()
+        user_entry = ttk.Entry(user_frame, textvariable=user_var, width=20)
+        user_entry.pack(side=tk.LEFT)
+        
+        # Refresh button
+        ttk.Button(
+            filter_frame,
+            text="🔄 Refresh",
+            command=lambda: load_audit_logs()
+        ).pack(side=tk.RIGHT, padx=(5, 0))
+        
+        ttk.Button(
+            filter_frame,
+            text="💾 Export",
+            command=lambda: export_audit_logs()
+        ).pack(side=tk.RIGHT)
+        
+        # Audit log table
+        table_frame = ttk.Frame(main_frame)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Scrollbars
+        table_scroll_y = ttk.Scrollbar(table_frame)
+        table_scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        table_scroll_x = ttk.Scrollbar(table_frame, orient=tk.HORIZONTAL)
+        table_scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        # Treeview
+        columns = ('timestamp', 'user', 'action', 'resource', 'details', 'ip_address')
+        audit_tree = ttk.Treeview(
+            table_frame,
+            columns=columns,
+            show='headings',
+            yscrollcommand=table_scroll_y.set,
+            xscrollcommand=table_scroll_x.set
+        )
+        
+        # Configure columns
+        audit_tree.heading('timestamp', text='Timestamp')
+        audit_tree.heading('user', text='User')
+        audit_tree.heading('action', text='Action')
+        audit_tree.heading('resource', text='Resource')
+        audit_tree.heading('details', text='Details')
+        audit_tree.heading('ip_address', text='IP Address')
+        
+        audit_tree.column('timestamp', width=150)
+        audit_tree.column('user', width=100)
+        audit_tree.column('action', width=100)
+        audit_tree.column('resource', width=150)
+        audit_tree.column('details', width=300)
+        audit_tree.column('ip_address', width=120)
+        
+        audit_tree.pack(fill=tk.BOTH, expand=True)
+        
+        table_scroll_y.config(command=audit_tree.yview)
+        table_scroll_x.config(command=audit_tree.xview)
+        
+        # Make sortable
+        self.make_treeview_sortable(audit_tree)
+        
+        def load_audit_logs():
+            """Load audit logs from file"""
+            from pathlib import Path
+            import json
+            from datetime import datetime
+            
+            # Clear existing
+            for item in audit_tree.get_children():
+                audit_tree.delete(item)
+            
+            # Load from audit/audit_log.jsonl
+            audit_file = Path("audit/audit_log.jsonl")
+            
+            if not audit_file.exists():
+                status_label.config(text="No audit log file found")
+                return
+            
+            # Apply filters
+            action_filter = action_var.get()
+            user_filter = user_var.get().lower()
+            
+            count = 0
+            try:
+                with open(audit_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if not line.strip():
+                            continue
+                        
+                        try:
+                            entry = json.loads(line)
+                            
+                            # Apply filters
+                            if action_filter != "ALL" and entry.get('action', '').upper() != action_filter:
+                                continue
+                            
+                            if user_filter and user_filter not in entry.get('user', '').lower():
+                                continue
+                            
+                            # Insert into tree
+                            audit_tree.insert('', tk.END, values=(
+                                entry.get('timestamp', 'N/A'),
+                                entry.get('user', 'system'),
+                                entry.get('action', 'UNKNOWN'),
+                                entry.get('resource', 'N/A'),
+                                entry.get('details', ''),
+                                entry.get('ip_address', 'N/A')
+                            ))
+                            count += 1
+                            
+                        except json.JSONDecodeError:
+                            continue
+                
+                status_label.config(text=f"Loaded {count} audit log entries")
+                
+            except Exception as e:
+                status_label.config(text=f"Error loading audit log: {e}")
+        
+        def export_audit_logs():
+            """Export filtered audit logs"""
+            from tkinter import filedialog
+            from datetime import datetime
+            
+            filename = filedialog.asksaveasfilename(
+                parent=window,
+                title="Export Audit Log",
+                defaultextension=".csv",
+                initialfile=f"audit_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json"), ("All files", "*.*")]
+            )
+            
+            if not filename:
+                return
+            
+            try:
+                import csv
+                
+                with open(filename, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    
+                    # Header
+                    writer.writerow(['Timestamp', 'User', 'Action', 'Resource', 'Details', 'IP Address'])
+                    
+                    # Data
+                    for item in audit_tree.get_children():
+                        values = audit_tree.item(item, 'values')
+                        writer.writerow(values)
+                
+                messagebox.showinfo("Export Success", f"Audit log exported to:\n{filename}", parent=window)
+                
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export audit log:\n{e}", parent=window)
+        
+        # Status bar
+        status_frame = ttk.Frame(main_frame)
+        status_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        status_label = ttk.Label(
+            status_frame,
+            text="Loading audit logs...",
+            font=("Helvetica", 9),
+            foreground="#666666"
+        )
+        status_label.pack(side=tk.LEFT)
+        
+        ttk.Button(
+            status_frame,
+            text="❌ Close",
+            command=window.destroy
+        ).pack(side=tk.RIGHT)
+        
+        # Bind filter updates
+        action_combo.bind('<<ComboboxSelected>>', lambda e: load_audit_logs())
+        user_entry.bind('<KeyRelease>', lambda e: load_audit_logs())
+        
+        # Initial load
+        load_audit_logs()
     
     def show_alerts(self):
         """Show system alerts"""

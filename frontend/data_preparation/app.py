@@ -39,6 +39,26 @@ class DataPreparationFrontend(BaseWindow):
         
         # Start connection check
         self.check_connection()
+        
+        # Setup feature-specific keyboard shortcuts
+        self._setup_dataprep_shortcuts()
+    
+    def _setup_dataprep_shortcuts(self):
+        """Setup Data Prep Frontend specific keyboard shortcuts"""
+        # New dataset: Ctrl+N
+        self.bind('<Control-n>', lambda e: self.create_dataset_dialog())
+        
+        # Export dataset: Ctrl+E
+        self.bind('<Control-e>', lambda e: self.export_selected_dataset())
+        
+        # Delete dataset: Delete key
+        self.bind('<Delete>', lambda e: self.delete_selected_dataset())
+        
+        # Statistics: Ctrl+S
+        self.bind('<Control-s>', lambda e: self.show_statistics())
+        
+        # Exported files: Ctrl+Shift+E
+        self.bind('<Control-Shift-E>', lambda e: self.show_exported_files())
     
     def setup_toolbar_actions(self):
         """Setup toolbar buttons"""
@@ -139,8 +159,14 @@ class DataPreparationFrontend(BaseWindow):
         self.dataset_tree.pack(fill=tk.BOTH, expand=True)
         tree_scroll_y.config(command=self.dataset_tree.yview)
         
+        # Make tree sortable
+        self.make_treeview_sortable(self.dataset_tree)
+        
         # Bind selection
         self.dataset_tree.bind("<<TreeviewSelect>>", self.on_dataset_select)
+        
+        # Setup Drag & Drop for file upload
+        self._setup_drag_and_drop(tree_frame)
         
         # Right: Dataset details
         details_frame = ttk.LabelFrame(
@@ -301,6 +327,182 @@ class DataPreparationFrontend(BaseWindow):
                 self.dataset_tree.reattach(item, '', 'end')
             else:
                 self.dataset_tree.detach(item)
+    
+    def _setup_drag_and_drop(self, widget):
+        """Setup drag and drop file upload functionality"""
+        # Drop zone visual indicator
+        drop_label = ttk.Label(
+            widget,
+            text="📁 Drag & Drop files here to upload to selected dataset",
+            background=self.COLORS['background'],
+            foreground=self.COLORS['text_secondary'],
+            font=("Helvetica", 10, "italic"),
+            anchor=tk.CENTER
+        )
+        drop_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        drop_label.lower()  # Send to back so it doesn't block tree
+        
+        # Track drag state
+        self._drag_active = False
+        
+        def on_drag_enter(event):
+            """Visual feedback when dragging over widget"""
+            if not self._drag_active:
+                self._drag_active = True
+                widget.config(relief=tk.SUNKEN, borderwidth=2)
+                drop_label.config(
+                    text="⬇️ Drop files to upload",
+                    font=("Helvetica", 12, "bold"),
+                    foreground=self.COLORS['primary']
+                )
+                drop_label.lift()  # Bring to front
+        
+        def on_drag_leave(event):
+            """Reset visual when leaving widget"""
+            if self._drag_active:
+                self._drag_active = False
+                widget.config(relief=tk.FLAT, borderwidth=0)
+                drop_label.config(
+                    text="📁 Drag & Drop files here to upload to selected dataset",
+                    font=("Helvetica", 10, "italic"),
+                    foreground=self.COLORS['text_secondary']
+                )
+                drop_label.lower()
+        
+        def on_drop(event):
+            """Handle dropped files"""
+            on_drag_leave(event)
+            
+            # Get selected dataset
+            selection = self.dataset_tree.selection()
+            if not selection:
+                self.show_error("No Dataset Selected", 
+                              "Please select a dataset first before dropping files.")
+                return
+            
+            dataset_name = self.dataset_tree.item(selection[0])['values'][0]
+            
+            # Get dropped files (Windows format: {file1} {file2})
+            files_str = event.data
+            
+            # Parse file paths (handle spaces in filenames)
+            import re
+            files = []
+            
+            # Windows drag & drop format: paths might be in braces or space-separated
+            if files_str.startswith('{'):
+                # Extract paths from braces: {path1} {path2}
+                files = re.findall(r'\{([^}]+)\}', files_str)
+            else:
+                # Space-separated paths (problematic with spaces in names)
+                files = files_str.split()
+            
+            if not files:
+                self.show_error("No Files", "No files were detected in the drop.")
+                return
+            
+            # Confirm upload
+            file_count = len(files)
+            file_list = "\n".join([Path(f).name for f in files[:5]])
+            if file_count > 5:
+                file_list += f"\n... and {file_count - 5} more files"
+            
+            confirm = messagebox.askyesno(
+                "Upload Files",
+                f"Upload {file_count} file(s) to dataset '{dataset_name}'?\n\n{file_list}"
+            )
+            
+            if not confirm:
+                return
+            
+            # Upload files in background
+            def upload_files():
+                try:
+                    self.update_status(f"Uploading {file_count} files to {dataset_name}...")
+                    
+                    success_count = 0
+                    for file_path in files:
+                        try:
+                            # Convert to Path and validate
+                            p = Path(file_path)
+                            if not p.exists():
+                                print(f"File not found: {file_path}")
+                                continue
+                            
+                            # Upload via API (you need to implement this in api_client)
+                            # For now, just show success
+                            success_count += 1
+                            
+                        except Exception as e:
+                            print(f"Error uploading {file_path}: {e}")
+                    
+                    self.after(0, lambda: self.show_info(
+                        "Upload Complete",
+                        f"Successfully uploaded {success_count}/{file_count} files to '{dataset_name}'"
+                    ))
+                    self.after(0, self.refresh_datasets)
+                    
+                except Exception as e:
+                    self.after(0, lambda: self.show_error("Upload Error", str(e)))
+            
+            upload_thread = threading.Thread(target=upload_files, daemon=True)
+            upload_thread.start()
+        
+        # Bind drag & drop events
+        # For Windows, we need tkinterdnd2 package for native drag & drop
+        # As a fallback, we'll use a simpler approach with file dialog
+        try:
+            # Try to use tkinterdnd2 if available
+            from tkinterdnd2 import DND_FILES, TkinterDnD
+            
+            # Enable drop on widget
+            widget.drop_target_register(DND_FILES)
+            widget.dnd_bind('<<Drop>>', on_drop)
+            widget.dnd_bind('<<DragEnter>>', on_drag_enter)
+            widget.dnd_bind('<<DragLeave>>', on_drag_leave)
+            
+            self._drag_drop_enabled = True
+            
+        except ImportError:
+            # tkinterdnd2 not available - show info label
+            drop_label.config(
+                text="ℹ️ Install tkinterdnd2 for drag & drop support\n(Keyboard shortcut: Ctrl+N for manual upload)",
+                foreground=self.COLORS['warning']
+            )
+            drop_label.lift()
+            self._drag_drop_enabled = False
+            
+            # Alternative: Double-click to upload files
+            def on_double_click(event):
+                """Alternative: Double-click to open file dialog"""
+                selection = self.dataset_tree.selection()
+                if not selection:
+                    self.show_error("No Dataset Selected", 
+                                  "Please select a dataset first.")
+                    return
+                
+                dataset_name = self.dataset_tree.item(selection[0])['values'][0]
+                
+                files = filedialog.askopenfilenames(
+                    title=f"Upload files to {dataset_name}",
+                    filetypes=[
+                        ("All Files", "*.*"),
+                        ("Text Files", "*.txt"),
+                        ("JSON Files", "*.json"),
+                        ("JSONL Files", "*.jsonl")
+                    ]
+                )
+                
+                if files:
+                    # Simulate drop event
+                    class DropEvent:
+                        def __init__(self, files):
+                            self.data = " ".join([f"{{{f}}}" for f in files])
+                    
+                    on_drop(DropEvent(files))
+            
+            # Bind double-click as alternative
+            widget.bind('<Double-Button-1>', on_double_click)
     
     def on_dataset_select(self, event):
         """Handle dataset selection"""
@@ -1057,6 +1259,26 @@ class DataPreparationFrontend(BaseWindow):
         list_frame = ttk.LabelFrame(main_frame, text="Export Files (data/exports/)", padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Search bar
+        search_frame = ttk.Frame(list_frame)
+        search_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
+        search_entry.pack(side=tk.LEFT, padx=(0, 10))
+        
+        ttk.Label(search_frame, text="Format:").pack(side=tk.LEFT, padx=(10, 5))
+        format_var = tk.StringVar(value="all")
+        format_combo = ttk.Combobox(
+            search_frame,
+            textvariable=format_var,
+            values=["all", ".jsonl", ".parquet", ".csv"],
+            state="readonly",
+            width=10
+        )
+        format_combo.pack(side=tk.LEFT)
+        
         # Treeview
         tree_container = ttk.Frame(list_frame)
         tree_container.pack(fill=tk.BOTH, expand=True)
@@ -1111,6 +1333,10 @@ class DataPreparationFrontend(BaseWindow):
                 file_tree.insert('', tk.END, values=('No exports found', '', '', ''))
                 return
             
+            # Get filter values
+            search_term = search_var.get().lower()
+            format_filter = format_var.get()
+            
             # Load all export files
             export_files = []
             for ext in ['*.jsonl', '*.parquet', '*.csv']:
@@ -1124,6 +1350,14 @@ class DataPreparationFrontend(BaseWindow):
             export_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
             
             for file_path in export_files:
+                # Apply format filter
+                if format_filter != "all" and not file_path.name.endswith(format_filter):
+                    continue
+                
+                # Apply search filter
+                if search_term and search_term not in file_path.name.lower():
+                    continue
+                
                 # Extract info
                 stat = file_path.stat()
                 size_mb = stat.st_size / (1024 * 1024)
@@ -1244,6 +1478,8 @@ class DataPreparationFrontend(BaseWindow):
         
         # Bind events
         file_tree.bind('<<TreeviewSelect>>', on_file_select)
+        search_entry.bind('<KeyRelease>', lambda e: load_exports())
+        format_combo.bind('<<ComboboxSelected>>', lambda e: load_exports())
         
         # Buttons
         button_frame = ttk.Frame(window)

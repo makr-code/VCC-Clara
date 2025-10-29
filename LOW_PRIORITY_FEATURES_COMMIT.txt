@@ -1,0 +1,203 @@
+feat: Add low-priority admin features (system logs + audit log)
+
+## Summary
+Implemented 2 low-priority admin features for enhanced system monitoring
+and auditing capabilities. Both features include advanced filtering,
+export functionality, and sortable columns.
+
+## Features Implemented
+
+### 1. Enhanced System Logs Viewer (~220 lines)
+
+**Location:** `frontend/admin/app.py` - `show_system_logs()`
+
+**Features:**
+- Multi-level filtering (INFO, WARNING, ERROR, DEBUG, ALL)
+- Real-time text search across all log entries
+- Auto-scroll toggle for live monitoring
+- Color-coded log levels:
+  - INFO: Blue
+  - WARNING: Orange
+  - ERROR: Red (bold)
+  - DEBUG: Gray
+- Export logs to file (.log, .txt)
+- Clear logs function with confirmation
+- Status bar showing filter statistics
+
+**UI Components:**
+- Filter controls: Level dropdown, search box, auto-scroll checkbox
+- Action buttons: Refresh, Export, Clear
+- Color-coded text widget with scrollbars
+- Real-time filter application
+
+**Usage:**
+```python
+# Admin Frontend → Toolbar → "📋 Logs" button
+# Or: Tools menu → System Logs
+```
+
+**Technical Details:**
+- Reads from main log viewer (self.log_viewer)
+- Applies filters in real-time on KeyRelease
+- Uses Text widget tags for color coding
+- Graceful handling of missing log source
+
+---
+
+### 2. Audit Log Viewer (~200 lines)
+
+**Location:** `frontend/admin/app.py` - `show_audit_log()`
+
+**Features:**
+- Action type filtering (ALL, CREATE, UPDATE, DELETE, EXPORT, LOGIN, LOGOUT, CONFIG_CHANGE)
+- User filtering with text search
+- Sortable columns (click headers to sort)
+- CSV export with all filtered data
+- Reads from JSONL audit log file
+- Treeview with 6 columns:
+  - Timestamp
+  - User
+  - Action
+  - Resource
+  - Details
+  - IP Address
+
+**Data Source:**
+- File: `audit/audit_log.jsonl`
+- Format: One JSON object per line
+- Fields: timestamp, user, action, resource, details, ip_address
+
+**UI Components:**
+- Filter controls: Action dropdown, user search
+- Sortable treeview (using make_treeview_sortable())
+- Export to CSV functionality
+- Status bar with entry count
+
+**Usage:**
+```python
+# Admin Frontend → Sidebar → "Audit Log"
+# Filters update in real-time
+# Click column headers to sort
+```
+
+**Technical Details:**
+- Reads JSONL line-by-line for memory efficiency
+- JSON parsing with error handling (skips invalid lines)
+- CSV export preserves filtered results
+- Real-time filter application
+
+---
+
+## Files Modified
+
+- `frontend/admin/app.py` (+420 lines)
+  - Enhanced `show_system_logs()` from stub to full implementation
+  - Enhanced `show_audit_log()` from stub to full implementation
+
+## Code Structure
+
+### Enhanced System Logs Viewer
+```python
+def show_system_logs(self):
+    # Window setup
+    window = tk.Toplevel(self)
+    
+    # Filter controls
+    level_var = tk.StringVar(value="ALL")
+    search_var = tk.StringVar()
+    autoscroll_var = tk.BooleanVar(value=True)
+    
+    # Log viewer with color tags
+    log_text = tk.Text(...)
+    log_text.tag_config("INFO", foreground="#2196F3")
+    log_text.tag_config("ERROR", foreground="#F44336", font=bold)
+    
+    # Filter function
+    def update_log_view():
+        # Apply level and search filters
+        # Color code entries
+        # Update status
+```
+
+### Audit Log Viewer
+```python
+def show_audit_log(self):
+    # Window setup
+    window = tk.Toplevel(self)
+    
+    # Filter controls
+    action_var = tk.StringVar(value="ALL")
+    user_var = tk.StringVar()
+    
+    # Treeview with 6 columns
+    audit_tree = ttk.Treeview(columns=(...))
+    self.make_treeview_sortable(audit_tree)
+    
+    # Load function
+    def load_audit_logs():
+        with open("audit/audit_log.jsonl") as f:
+            for line in f:
+                entry = json.loads(line)
+                # Apply filters
+                # Insert into tree
+```
+
+## Integration
+
+Both features integrate seamlessly with existing Admin Frontend:
+- Accessible from toolbar/sidebar
+- Use shared utilities (make_treeview_sortable, file dialogs)
+- Consistent UI styling and error handling
+- Follow established patterns from other features
+
+## User Experience
+
+### System Logs
+1. Open from toolbar/menu
+2. Select log level (or ALL)
+3. Type in search box for real-time filtering
+4. Toggle auto-scroll for live monitoring
+5. Export filtered logs to file
+6. Clear logs when needed
+
+### Audit Log
+1. Open from sidebar
+2. Select action type (or ALL)
+3. Filter by user name
+4. Click column headers to sort
+5. Export filtered results to CSV
+6. Review user actions with timestamps
+
+## Benefits
+
+- **Debugging**: Enhanced log filtering speeds up issue diagnosis
+- **Compliance**: Audit log provides full user action history
+- **Security**: Track all system modifications and exports
+- **Monitoring**: Real-time log viewing with auto-scroll
+- **Reporting**: CSV export for external analysis
+
+## Testing
+
+✅ Import successful
+✅ UI renders correctly
+✅ Filters work in real-time
+✅ Export functionality tested
+✅ Sorting works on all columns
+✅ Handles missing files gracefully
+✅ Color coding displays correctly
+
+## Breaking Changes
+
+None. All changes are additive.
+
+## Migration Notes
+
+**Audit Log Format:**
+Create `audit/audit_log.jsonl` with entries like:
+```json
+{"timestamp": "2025-10-25T18:30:00", "user": "admin", "action": "CREATE", "resource": "dataset_123", "details": "Created training dataset", "ip_address": "192.168.1.100"}
+```
+
+---
+
+Co-authored-by: GitHub Copilot <copilot@github.com>

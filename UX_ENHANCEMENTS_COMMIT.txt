@@ -1,0 +1,140 @@
+feat: Add UX enhancements (keyboard shortcuts, sorting, progress)
+
+## Summary
+Implemented 3 major UX improvements across all frontend applications:
+keyboard shortcuts, treeview column sorting, and progress indicators.
+
+## 1. Keyboard Shortcuts (20+ shortcuts)
+
+### Global Shortcuts (All Frontends)
+- F5 / Ctrl+R: Refresh view
+- Ctrl+L: Clear logs
+- Ctrl+B: Toggle sidebar
+- F1: Help
+- Escape: Close dialog
+- Ctrl+,: Settings
+
+### Training Frontend
+- Ctrl+N: New training job
+- Ctrl+K: Cancel selected job
+- Ctrl+M: View job metrics
+- Ctrl+O: Browse output files
+- Ctrl+Shift+C: Config manager
+
+### Data Preparation Frontend
+- Ctrl+N: New dataset
+- Ctrl+E: Export dataset
+- Delete: Delete selected dataset
+- Ctrl+S: View statistics
+- Ctrl+Shift+E: Browse exported files
+
+### Admin Frontend
+- Ctrl+D: Database management
+- Ctrl+Shift+S: Start all services
+- Ctrl+Shift+X: Stop all services
+- Ctrl+Shift+R: Restart all services
+- Ctrl+Shift+C: Configuration manager
+
+## 2. Treeview Column Sorting
+
+Added `make_treeview_sortable()` utility to BaseWindow:
+- Click any column header to sort
+- Numeric + string sort detection
+- Visual indicators (▲ ascending / ▼ descending)
+- Toggles between ascending/descending
+- Applied to:
+  - Training job list
+  - Dataset list
+  - All treeviews in dialogs
+
+## 3. Progress Indicators
+
+Added `show_progress_dialog()` utility to BaseWindow:
+- Modal progress dialog with progress bar
+- Configurable max value and messages
+- Status label for detailed updates
+- Used in dataset export (shows MB/% progress)
+- Indeterminate mode for API calls
+
+## Files Modified
+
+### Core Framework
+- `frontend/shared/components/base_window.py` (+90 lines)
+  - `_setup_keyboard_shortcuts()`: Global shortcuts
+  - `_handle_escape()`: Escape key handler
+  - `make_treeview_sortable()`: Column sorting utility
+  - `show_progress_dialog()`: Progress dialog utility
+
+### Frontend Applications
+- `frontend/training/app.py` (+15 lines)
+  - `_setup_training_shortcuts()`: Feature-specific shortcuts
+  - Applied sorting to job_tree
+
+- `frontend/data_preparation/app.py` (+15 lines)
+  - `_setup_dataprep_shortcuts()`: Feature-specific shortcuts
+  - Applied sorting to dataset_tree
+
+- `frontend/admin/app.py` (+20 lines)
+  - `_setup_admin_shortcuts()`: Feature-specific shortcuts
+
+## Technical Details
+
+### Keyboard Shortcuts Implementation
+```python
+# Global shortcuts in BaseWindow
+self.bind('<F5>', lambda e: self.refresh_view())
+self.bind('<Control-l>', lambda e: self.clear_logs())
+self.bind('<Escape>', lambda e: self._handle_escape())
+
+# Frontend-specific shortcuts
+self.bind('<Control-n>', lambda e: self.create_job_dialog())
+self.bind('<Control-k>', lambda e: self.cancel_selected_job())
+```
+
+### Treeview Sorting Implementation
+```python
+def make_treeview_sortable(self, treeview):
+    # Tries numeric sort first, falls back to string
+    # Updates heading with arrow indicator
+    # Binds to all columns including #0
+```
+
+### Progress Dialog Implementation
+```python
+dialog, progress_var, pbar, status = self.show_progress_dialog(
+    "Export", "Exporting dataset...", max_value=100
+)
+for i in range(100):
+    progress_var.set(i)
+    status.config(text=f"Processing {i}%")
+    dialog.update()
+dialog.destroy()
+```
+
+## User Experience Improvements
+
+- **Faster Navigation**: Keyboard shortcuts reduce mouse usage
+- **Better Organization**: Sort by any column for quick finding
+- **Visual Feedback**: Progress bars show operation status
+- **Accessibility**: Keyboard-only navigation possible
+- **Consistency**: Same shortcuts work across all frontends
+
+## Testing
+
+✅ All shortcuts tested and working
+✅ Sorting works on all treeviews
+✅ Progress dialog displays correctly
+✅ No conflicts with existing bindings
+✅ Escape closes dialogs without closing main window
+
+## Breaking Changes
+
+None. All changes are additive.
+
+## Migration Notes
+
+None required. Features work out of the box.
+
+---
+
+Co-authored-by: GitHub Copilot <copilot@github.com>
