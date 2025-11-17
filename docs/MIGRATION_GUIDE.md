@@ -428,8 +428,11 @@ mkdir -p shared/auth
 
 #### Move `shared/jwt_middleware.py` → `shared/auth/middleware.py`
 
+**Status:** ✅ **COMPLETED**
+
+The file has been moved. Original migration command was:
 ```bash
-# Copy content
+# Copy content (COMPLETED)
 cp shared/jwt_middleware.py shared/auth/middleware.py
 ```
 
@@ -502,7 +505,11 @@ mkdir -p shared/database/adapters
 
 #### Move `shared/uds3_dataset_search.py` → `shared/database/dataset_search.py`
 
+**Status:** ✅ **COMPLETED**
+
+The file has been moved. Original migration command was:
 ```bash
+# Copy content (COMPLETED)
 cp shared/uds3_dataset_search.py shared/database/dataset_search.py
 ```
 
@@ -806,11 +813,15 @@ curl http://localhost:45681/health
 
 ### Step 7.1: Move Old Files to Archive
 
+**Status:** ✅ **COMPLETED** - Old files moved to `archive/legacy_backends/`
+
+Original cleanup plan (files now in archive/legacy_backends/):
 ```bash
 mkdir -p archive/pre-refactor
-mv scripts/clara_training_backend.py archive/pre-refactor/
-mv scripts/clara_dataset_backend.py archive/pre-refactor/
-mv shared/jwt_middleware.py archive/pre-refactor/
+mv scripts/clara_training_backend.py archive/pre-refactor/  # → archive/legacy_backends/
+mv scripts/clara_dataset_backend.py archive/pre-refactor/  # → archive/legacy_backends/
+# Note: jwt_middleware.py and uds3_dataset_search.py moved to archive/legacy_backends/
+```
 mv shared/uds3_dataset_search.py archive/pre-refactor/
 ```
 

@@ -1,8 +1,10 @@
 # CLARA Training System - Implementation Summary
 
-**Date:** 24. Oktober 2025  
+**Date:** 2025-11-17 (Updated)  
 **Status:** ✅ **PRODUCTION READY** (Core Features Complete)  
 **Version:** 1.0.0
+
+> **For implementation history and timeline, see [IMPLEMENTATION_HISTORY.md](./IMPLEMENTATION_HISTORY.md)**
 
 ---
 
@@ -19,14 +21,14 @@
 - ✅ **Graceful Degradation** - Works without external dependencies (debug mode)
 
 ### 2. Security Framework
-- ✅ **JWT Middleware** (shared/jwt_middleware.py, 600+ lines)
+- ✅ **JWT Middleware** (shared/auth/middleware.py, 600+ lines)
   - 4 Security Modes: production, development, debug, testing
   - Keycloak OIDC Integration (RS256)
   - RBAC Helpers: `require_roles()`, `optional_auth()`, `has_role()`
   - Mock user for offline development
 
 ### 3. UDS3 Integration
-- ✅ **Dataset Search API** (shared/uds3_dataset_search.py, 400+ lines)
+- ✅ **Dataset Search API** (shared/database/dataset_search.py, 400+ lines)
   - Hybrid Search (Vector + Graph + Keyword)
   - Quality Filtering & Scoring
   - JSONL Export for training datasets
@@ -326,15 +328,17 @@ Clara/
 │       - Dataset Search Integration
 │
 ├── shared/
-│   ├── jwt_middleware.py (600+ lines) ✅
-│   │   - JWT Authentication
-│   │   - RBAC Helpers
-│   │   - 4 Security Modes
+│   ├── auth/
+│   │   └── middleware.py (600+ lines) ✅
+│   │       - JWT Authentication
+│   │       - RBAC Helpers
+│   │       - 4 Security Modes
 │   │
-│   └── uds3_dataset_search.py (400+ lines) ✅
-│       - Dataset Search API
-│       - Quality Filtering
-│       - JSONL Export
+│   └── database/
+│       └── dataset_search.py (400+ lines) ✅
+│           - Dataset Search API
+│           - Quality Filtering
+│           - JSONL Export
 │
 ├── tests/
 │   └── test_security_integration.py (300+ lines) ✅
