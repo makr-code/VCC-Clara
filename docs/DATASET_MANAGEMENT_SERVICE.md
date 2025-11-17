@@ -101,8 +101,8 @@ quality_score = (
 - Python 3.9+
 - FastAPI + Uvicorn
 - UDS3 Backend (PostgreSQL, ChromaDB, Neo4j)
-- JWT Middleware (shared/jwt_middleware.py)
-- UDS3 Dataset Search API (shared/uds3_dataset_search.py)
+- JWT Middleware (shared/auth/middleware.py)
+- UDS3 Dataset Search API (shared/database/dataset_search.py)
 
 ### Dependencies
 

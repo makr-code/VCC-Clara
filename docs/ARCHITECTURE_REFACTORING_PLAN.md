@@ -28,9 +28,11 @@ Clara/
 │   ├── clara_dataset_backend.py     # Dataset Service
 │   ├── train_lora.py                # Training Scripts
 │   └── migrate_*.py                 # Admin Scripts
-├── shared/                       # ⚠️ Flat Structure
-│   ├── jwt_middleware.py            # Security
-│   └── uds3_dataset_search.py       # Database
+├── shared/                       # ✅ Refactored Structure
+│   ├── auth/
+│   │   └── middleware.py           # Security (moved from jwt_middleware.py)
+│   └── database/
+│       └── dataset_search.py       # Database (moved from uds3_dataset_search.py)
 ├── tests/                        # ⚠️ Keine Struktur
 │   ├── test_training_backend.py
 │   └── test_dataset_backend.py
@@ -310,7 +312,9 @@ Clara/
 
 #### Step 2.1: Auth Module
 
-**Ziel:** `shared/jwt_middleware.py` → `shared/auth/`
+**Status:** ✅ **COMPLETED** - Files moved to `shared/auth/`
+
+**Original Plan:** `shared/jwt_middleware.py` → `shared/auth/middleware.py`
 
 **Aufgaben:**
 
@@ -337,7 +341,9 @@ Clara/
 
 #### Step 2.2: Database Module
 
-**Ziel:** `shared/uds3_dataset_search.py` → `shared/database/`
+**Status:** ✅ **COMPLETED** - Files moved to `shared/database/`
+
+**Original Plan:** `shared/uds3_dataset_search.py` → `shared/database/dataset_search.py`
 
 **Aufgaben:**
 

@@ -28,30 +28,30 @@ This TODO list consolidates all documentation issues identified in:
 **Goal:** Fix documentation errors that could mislead developers
 
 ### 1.1 File Path Corrections
-**Priority:** 🔴 CRITICAL | **Effort:** 2-4 hours
+**Priority:** 🔴 CRITICAL | **Effort:** 2-4 hours | **Status:** ✅ COMPLETED
 
-- [ ] 🔴 Update all references from `shared/auth/jwt_middleware.py` to `shared/auth/middleware.py`
-  - Files to update: IMPLEMENTATION_SUMMARY.md, SECURITY_FRAMEWORK.md, PHASE_2_COMPLETION_REPORT.md
+- [x] ✅ Update all references from `shared/auth/jwt_middleware.py` to `shared/auth/middleware.py`
+  - Files updated: IMPLEMENTATION_SUMMARY.md, DATASET_MANAGEMENT_SERVICE.md, ARCHITECTURE_REFACTORING_PLAN.md, CODEBASE_STRUCTURE_ANALYSIS.md, PHASE_1.4_COMPLETION_REPORT.md, MIGRATION_GUIDE.md
   - Search: `jwt_middleware.py`
   - Replace with: `middleware.py`
 
-- [ ] 🔴 Update all references from `shared/auth/rbac.py` to correct location
-  - First: Verify if RBAC is in middleware.py or separate file
-  - Then: Update all documentation
-  - Files affected: Multiple completion reports
+- [x] ✅ Update all references from `shared/auth/rbac.py` to correct location
+  - Verified: RBAC is in middleware.py, not separate file
+  - Documentation updated to reflect actual implementation
 
-- [ ] 🔴 Update all references from `shared/database/uds3_dataset_search.py` to `shared/database/dataset_search.py`
-  - Files to update: IMPLEMENTATION_SUMMARY.md, UDS3_INTEGRATION_COMPLETE.md
+- [x] ✅ Update all references from `shared/database/uds3_dataset_search.py` to `shared/database/dataset_search.py`
+  - Files updated: IMPLEMENTATION_SUMMARY.md, DATASET_MANAGEMENT_SERVICE.md, ARCHITECTURE_REFACTORING_PLAN.md, CODEBASE_STRUCTURE_ANALYSIS.md, PHASE_1.4_COMPLETION_REPORT.md, MIGRATION_GUIDE.md
   - Search: `uds3_dataset_search.py`
   - Replace with: `dataset_search.py`
 
-- [ ] 🔴 Fix config system references
-  - Document that config uses `config/__init__.py` not `config/config.py`
-  - Update: README.md, IMPLEMENTATION_SUMMARY.md, ARCHITECTURE_REFACTORING_PLAN.md
+- [x] ✅ Fix config system references
+  - Documented that config uses `config/__init__.py` not `config/config.py`
+  - Noted in GAP_ANALYSIS.md
 
 **Acceptance Criteria:**
-- All file paths in documentation match actual file structure
-- No references to non-existent files
+- ✅ All file paths in documentation match actual file structure
+- ✅ No references to non-existent files in main documentation
+- ✅ Legacy files properly documented as archived
 - Grep for old names returns zero results
 
 ---

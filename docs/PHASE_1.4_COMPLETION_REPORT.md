@@ -181,15 +181,15 @@ backend/
 ## 🔗 Integration Points
 
 ### UDS3 Integration
-1. **shared/uds3_dataset_search.py** → ✅ Funktioniert (optional import, graceful fallback)
+1. **shared/database/dataset_search.py** → ✅ Funktioniert (optional import, graceful fallback)
    - `DatasetSearchAPI` - Hybrid Search
    - `DatasetSearchQuery` - Query Configuration
    - `DatasetDocument` - Document Model
    - `UDS3_AVAILABLE` - Availability Flag
 
 ### Shared Modules
-1. **shared/jwt_middleware.py** → ✅ Funktioniert (optional import, graceful fallback)
-2. **shared/uds3_dataset_search.py** → ✅ Funktioniert (UDS3 optional)
+1. **shared/auth/middleware.py** → ✅ Funktioniert (optional import, graceful fallback)
+2. **shared/database/dataset_search.py** → ✅ Funktioniert (UDS3 optional)
 
 ### Export Dependencies
 1. **pandas** → Optional (fallback to JSONL if not installed)
