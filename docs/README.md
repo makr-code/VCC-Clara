@@ -237,11 +237,11 @@ Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
 - **[Tutorial](./TUTORIAL.md)** - Complete guide 2025
 - **[Training System Quickstart](./TRAINING_SYSTEM_QUICKSTART.md)** - Quick training guide
 - **[Batch Processing Quick Reference](./BATCH_PROCESSING_QUICK_REFERENCE.md)** - Batch processing
-- **[Frontend Features Quick Reference](./FRONTEND_FEATURES_QUICK_REFERENCE.md)** - Frontend features
+- **[Frontend Guide](./FRONTEND_GUIDE.md)** - **PRIMARY** - Complete frontend guide (consolidated)
+- **[Frontend Features Quick Reference](./FRONTEND_FEATURES_QUICK_REFERENCE.md)** - Quick feature reference
 
 ### 🔧 Implementation
 - **[Implementation Summary](./IMPLEMENTATION_SUMMARY.md)** - Core implementation status
-- **[Frontend Implementation Complete](./FRONTEND_IMPLEMENTATION_COMPLETE.md)** - Frontend completion
 - **[Dataset Management Service](./DATASET_MANAGEMENT_SERVICE.md)** - Dataset service v1.0.0
 
 ### ✨ Features
