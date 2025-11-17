@@ -247,7 +247,8 @@ Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
 ### ✨ Features
 - **[Continuous Learning](./CONTINUOUS_LEARNING.md)** - Continuous learning system
 - **[Veritas Integration](./VERITAS_INTEGRATION.md)** - Veritas integration
-- **[UDS3 Integration](./UDS3_INTEGRATION_COMPLETE.md)** - UDS3 integration
+- **[UDS3 Integration](./UDS3_INTEGRATION_COMPLETE.md)** - UDS3 integration (OPTIONAL)
+- **[UDS3 Status](./UDS3_STATUS.md)** - **NEW:** UDS3 availability and requirements
 - **[Archive Processing](./ARCHIVE_PROCESSING.md)** - Archive processing guide
 
 ### 🔄 Migration & History
