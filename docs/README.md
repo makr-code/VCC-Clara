@@ -1,5 +1,22 @@
 # CLARA - Cognitive Legal and Administrative Reasoning Assistant
 
+---
+
+## 🔔 Documentation Status Notice
+
+**⚠️ Documentation Consolidation in Progress**
+
+The CLARA documentation is undergoing consolidation and updates. For the latest status:
+
+- **[Documentation Consolidation Summary](./DOCUMENTATION_CONSOLIDATION_SUMMARY.md)** - Overview and action plan
+- **[Documentation Inventory](./DOCUMENTATION_INVENTORY.md)** - Complete inventory of all docs
+- **[Gap Analysis](./GAP_ANALYSIS.md)** - Implementation vs documentation gaps
+- **[Documentation TODO](./DOCUMENTATION_TODO.md)** - 107 tasks to improve documentation
+
+Some documentation may be outdated or contain inaccuracies. When in doubt, verify against the actual code implementation.
+
+---
+
 ```
 ## 🚀 Schnellstart
 
@@ -198,3 +215,54 @@ Dieses Projekt steht unter der MIT-Lizenz. Siehe [LICENSE](LICENSE) für Details
 ## 🆘 Support
 
 Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
+
+---
+
+## 📚 Documentation Index
+
+### 🔍 Documentation Status (2025-11-17)
+- **[Documentation Consolidation Summary](./DOCUMENTATION_CONSOLIDATION_SUMMARY.md)** - Executive summary and action plan
+- **[Documentation Inventory](./DOCUMENTATION_INVENTORY.md)** - Complete inventory of all 55 docs
+- **[Gap Analysis](./GAP_ANALYSIS.md)** - Implementation coverage (68.4%)
+- **[Documentation TODO](./DOCUMENTATION_TODO.md)** - 107 tasks in 6 phases
+
+### 🏗️ Architecture & Design
+- **[System Overview](./SYSTEM_OVERVIEW.md)** - Complete system description
+- **[Self-Learning LoRA System Architecture](./SELF_LEARNING_LORA_SYSTEM_ARCHITECTURE.md)** - Detailed architecture
+- **[Frontend Architecture](./FRONTEND_ARCHITECTURE.md)** - Frontend v2.0 architecture
+- **[Security Framework](./SECURITY_FRAMEWORK.md)** - Security & authentication
+- **[Architecture Refactoring Plan](./ARCHITECTURE_REFACTORING_PLAN.md)** - Clean code refactoring
+
+### 📖 User Guides
+- **[Tutorial](./TUTORIAL.md)** - Complete guide 2025
+- **[Training System Quickstart](./TRAINING_SYSTEM_QUICKSTART.md)** - Quick training guide
+- **[Batch Processing Quick Reference](./BATCH_PROCESSING_QUICK_REFERENCE.md)** - Batch processing
+- **[Frontend Features Quick Reference](./FRONTEND_FEATURES_QUICK_REFERENCE.md)** - Frontend features
+
+### 🔧 Implementation
+- **[Implementation Summary](./IMPLEMENTATION_SUMMARY.md)** - Core implementation status
+- **[Frontend Implementation Complete](./FRONTEND_IMPLEMENTATION_COMPLETE.md)** - Frontend completion
+- **[Dataset Management Service](./DATASET_MANAGEMENT_SERVICE.md)** - Dataset service v1.0.0
+
+### ✨ Features
+- **[Continuous Learning](./CONTINUOUS_LEARNING.md)** - Continuous learning system
+- **[Veritas Integration](./VERITAS_INTEGRATION.md)** - Veritas integration
+- **[UDS3 Integration](./UDS3_INTEGRATION_COMPLETE.md)** - UDS3 integration
+- **[Archive Processing](./ARCHIVE_PROCESSING.md)** - Archive processing guide
+
+### 🔄 Migration & History
+- **[Migration Guide](./MIGRATION_GUIDE.md)** - Clean architecture migration
+- **[Phase Completion Reports](.)** - PHASE_1 through PHASE_6 completion reports
+- **[Changelog](../CHANGELOG.md)** - Project changelog
+
+### ⚙️ Configuration & Models
+- **[Models](./MODELS.md)** - Available models and recommendations
+- **[vLLM Installation](./VLLM_INSTALLATION.md)** - vLLM setup guide
+
+### 🚀 Roadmap
+- **[Roadmap](./ROADMAP.md)** - Development roadmap
+- **[Prototype Strategy](./PROTOTYPE_STRATEGY_OVERVIEW.md)** - Prototype strategy
+
+---
+
+**Note:** Documentation is being consolidated. See [DOCUMENTATION_TODO.md](./DOCUMENTATION_TODO.md) for planned improvements.
