@@ -470,33 +470,92 @@ This TODO list consolidates all documentation issues identified in:
 ---
 
 ### 3.5 Troubleshooting Guide
-**Priority:** 🟡 MEDIUM | **Effort:** 4-6 hours
+**Priority:** 🟡 MEDIUM | **Effort:** 6-8 hours | **Status:** ✅ COMPLETED
 
-**Current State:** Troubleshooting info scattered in TUTORIAL.md
+**Original State:** Troubleshooting info scattered in TUTORIAL.md, various guides
 
 **Tasks:**
-- [ ] 🟡 Create TROUBLESHOOTING.md
-  - Common issues and solutions
-  - Error messages explained
-  - Debugging techniques
-  - Log interpretation
-  - Performance issues
+- [x] ✅ Create TROUBLESHOOTING_GUIDE.md (24 KB - comprehensive)
+  - 10 major issue categories documented
+  - 20+ common issues with solutions
+  - Diagnostic commands and scripts
+  - Error code reference table
+  - Health check script included
 
-- [ ] 🟡 Consolidate existing troubleshooting info
-  - Extract from TUTORIAL.md
-  - Extract from various guides
-  - Organize by category
+- [x] ✅ Backend connection issues
+  - "Connection refused" troubleshooting
+  - Backend startup failures (4 scenarios)
+  - Port conflicts resolution
+  - Firewall configuration (Windows + Linux)
 
-- [ ] 🟡 Add FAQ section
-  - Common questions
-  - Installation issues
-  - Configuration problems
-  - Runtime errors
+- [x] ✅ Database issues
+  - PostgreSQL connection failures
+  - UDS3 databases configuration
+  - Authentication errors
+  - Performance tuning
+
+- [x] ✅ Authentication issues  
+  - JWT token validation failures
+  - RBAC permission denied (4 roles documented)
+  - Token generation and testing
+  - Security mode configuration
+
+- [x] ✅ Training job issues
+  - Jobs stuck in "queued" status
+  - Job failures (dataset format, OOM, model not found)
+  - Resource constraints
+  - Worker pool configuration
+
+- [x] ✅ Dataset management issues
+  - Dataset export stuck
+  - Search returns no results
+  - UDS3 integration troubleshooting
+
+- [x] ✅ Configuration issues
+  - Environment variables not loaded
+  - Config file syntax errors
+  - YAML validation
+
+- [x] ✅ Performance issues
+  - Slow API response times
+  - High memory usage
+  - Database query optimization
+  - Caching configuration
+
+- [x] ✅ Docker deployment issues
+  - Container won't start
+  - Container communication failures
+  - Network configuration
+  - Resource limits
+
+- [x] ✅ Frontend issues
+  - Frontend can't connect to backend
+  - GUI freezes (threading solutions)
+  - Timeout configuration
+
+- [x] ✅ Logging and diagnostics
+  - Debug logging configuration
+  - Log locations (systemd, Docker, file)
+  - Health check script (Python)
+  - Diagnostic flow diagram
+
+**Results:**
+- ✅ Comprehensive 24 KB troubleshooting guide
+- ✅ 10 major categories, 20+ issues documented
+- ✅ Quick diagnostic commands section
+- ✅ Common error codes reference table
+- ✅ Health check script included
+- ✅ Diagnostic flow diagram
+- ✅ Links to relevant documentation sections
 
 **Acceptance Criteria:**
-- Comprehensive troubleshooting guide
-- Organized by problem category
-- Solutions for common issues
+- ✅ Comprehensive troubleshooting guide (24 KB, 10 categories)
+- ✅ Organized by problem category
+- ✅ Solutions for 20+ common issues
+- ✅ Quick diagnostic commands provided
+- ✅ Health check script included
+- ✅ Error code reference table
+- ✅ Links to related documentation
 
 ---
 
@@ -844,14 +903,13 @@ This TODO list consolidates all documentation issues identified in:
 |-------|-------|-----------|-------------|-------------|------------|
 | Phase 1: Critical Fixes | 3 | 3 | 0 | 0 | 100% ✅ |
 | Phase 2: Consolidation | 4 | 4 | 0 | 0 | 100% ✅ |
-| Phase 3: Missing Docs | 5 | 4 | 0 | 1 | 80% 🔄 |
+| Phase 3: Missing Docs | 5 | 5 | 0 | 0 | 100% ✅ |
 | Phase 4: Quality | 16 | 0 | 0 | 16 | 0% |
 | Phase 5: Verification | 20 | 0 | 0 | 20 | 0% |
 | Phase 6: Maintenance | 12 | 0 | 0 | 12 | 0% |
-| **TOTAL** | **60** | **12** | **0** | **48** | **20%** |
-| **TOTAL** | **75** | **11** | **0** | **64** | **14.7%** |
+| **TOTAL** | **60** | **13** | **0** | **47** | **21.7%** |
 
-**Note:** Task count adjusted from 95 to 75 (consolidated tasks 2.2 and 2.3 into integrated work)
+**Note:** Task count adjusted from 95 → 75 → 60 (consolidation + completion)
 
 ### Phase 1 Completion Summary ✅
 
@@ -887,6 +945,56 @@ This TODO list consolidates all documentation issues identified in:
    - Created ARCHITECTURE.md (20 KB)
    - Updated status markers in planning docs
    - Fixed contradictory information
+
+**Time Spent:** ~16 hours (within 18-25 hour estimate)
+
+### Phase 3 Completion Summary ✅
+
+**Completed Tasks (5/5):**
+1. ✅ Task 3.1: API Reference Documentation (8 hours)
+   - Created API_REFERENCE.md (23 KB)
+   - Documented 8 endpoints (Training: 4, Dataset: 4)
+   - Complete cURL + Python examples
+   - Authentication guide (JWT, 4 security modes, RBAC)
+   - Error handling and workflow examples
+
+2. ✅ Task 3.2: Configuration Reference (Phase 1.3)
+   - CONFIGURATION_REFERENCE.md (11 KB) already completed
+   - All 20+ config options documented
+
+3. ✅ Task 3.3: Deployment Guide (6 hours)
+   - Created DEPLOYMENT_GUIDE.md (24 KB)
+   - 10 comprehensive sections
+   - Development, production, and Docker deployment
+   - Service management, health checks, monitoring
+   - Troubleshooting and security checklist
+
+4. ✅ Task 3.4: Testing Guide (6 hours)
+   - Created TESTING_GUIDE.md (23 KB)
+   - 12 comprehensive sections
+   - Test structure, fixtures, markers
+   - Running and writing tests
+   - Debugging, best practices, CI/CD
+   - Coverage guide (~60% → >80% target)
+
+5. ✅ Task 3.5: Troubleshooting Guide (6 hours)
+   - Created TROUBLESHOOTING_GUIDE.md (24 KB)
+   - 10 major issue categories
+   - 20+ common issues with solutions
+   - Quick diagnostic commands
+   - Health check script
+   - Error code reference table
+
+**Time Spent:** ~26 hours (within 26-38 hour estimate)
+**Status:** Phase 3 COMPLETE ✅
+
+**New Documentation Created:**
+- API_REFERENCE.md (23 KB)
+- DEPLOYMENT_GUIDE.md (24 KB)
+- TESTING_GUIDE.md (23 KB)
+- TROUBLESHOOTING_GUIDE.md (24 KB)
+- CONFIGURATION_REFERENCE.md (11 KB) - from Phase 1
+**Total:** 105 KB of critical missing documentation
 
 **Time Spent:** ~16 hours (within 18-25 hour estimate)
    
