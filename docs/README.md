@@ -261,6 +261,7 @@ Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
 - **[API Reference](./API_REFERENCE.md)** - **NEW:** Complete REST API documentation (Training & Dataset backends)
 - **[Deployment Guide](./DEPLOYMENT_GUIDE.md)** - **NEW:** Complete deployment guide (dev/prod/Docker)
 - **[Configuration Reference](./CONFIGURATION_REFERENCE.md)** - **NEW:** Complete config options guide
+- **[Testing Guide](./TESTING_GUIDE.md)** - **NEW:** Complete testing guide (pytest, fixtures, coverage, CI/CD)
 - **[Models](./MODELS.md)** - Available models and recommendations
 - **[vLLM Installation](./VLLM_INSTALLATION.md)** - vLLM setup guide
 
