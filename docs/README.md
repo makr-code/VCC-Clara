@@ -257,6 +257,7 @@ Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
 - **[Changelog](../CHANGELOG.md)** - Project changelog
 
 ### ⚙️ Configuration & Models
+- **[Configuration Reference](./CONFIGURATION_REFERENCE.md)** - **NEW:** Complete config options guide
 - **[Models](./MODELS.md)** - Available models and recommendations
 - **[vLLM Installation](./VLLM_INSTALLATION.md)** - vLLM setup guide
 
