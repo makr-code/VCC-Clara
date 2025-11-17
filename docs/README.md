@@ -263,6 +263,7 @@ Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
 - **[Configuration Reference](./CONFIGURATION_REFERENCE.md)** - **NEW:** Complete config options guide
 - **[Testing Guide](./TESTING_GUIDE.md)** - **NEW:** Complete testing guide (pytest, fixtures, coverage, CI/CD)
 - **[Troubleshooting Guide](./TROUBLESHOOTING_GUIDE.md)** - **NEW:** Comprehensive troubleshooting (20+ issues, diagnostics, error codes)
+- **[Documentation Style Guide](./DOCUMENTATION_STYLE_GUIDE.md)** - **NEW:** Documentation standards and conventions
 - **[Models](./MODELS.md)** - Available models and recommendations
 - **[vLLM Installation](./VLLM_INSTALLATION.md)** - vLLM setup guide
 
