@@ -227,11 +227,12 @@ Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
 - **[Documentation TODO](./DOCUMENTATION_TODO.md)** - 107 tasks in 6 phases
 
 ### 🏗️ Architecture & Design
-- **[System Overview](./SYSTEM_OVERVIEW.md)** - Complete system description
-- **[Self-Learning LoRA System Architecture](./SELF_LEARNING_LORA_SYSTEM_ARCHITECTURE.md)** - Detailed architecture
-- **[Frontend Architecture](./FRONTEND_ARCHITECTURE.md)** - Frontend v2.0 architecture
-- **[Security Framework](./SECURITY_FRAMEWORK.md)** - Security & authentication
-- **[Architecture Refactoring Plan](./ARCHITECTURE_REFACTORING_PLAN.md)** - Clean code refactoring
+- **[Architecture](./ARCHITECTURE.md)** - **PRIMARY** - Production architecture overview
+- **[Frontend Architecture](./FRONTEND_ARCHITECTURE.md)** - Frontend v2.0 architecture details
+- **[Security Framework](./SECURITY_FRAMEWORK.md)** - Security & authentication framework
+- **[System Overview](./SYSTEM_OVERVIEW.md)** - Complete system description (legacy)
+- **[Self-Learning LoRA System Architecture](./SELF_LEARNING_LORA_SYSTEM_ARCHITECTURE.md)** - Original plan (implemented)
+- **[Architecture Refactoring Plan](./ARCHITECTURE_REFACTORING_PLAN.md)** - Refactoring plan (completed)
 
 ### 📖 User Guides
 - **[Tutorial](./TUTORIAL.md)** - Complete guide 2025
