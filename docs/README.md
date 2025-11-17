@@ -257,8 +257,9 @@ Bei Fragen oder Problemen öffnen Sie bitte ein Issue im Repository.
 - **[Phase Completion Reports](.)** - PHASE_1 through PHASE_6 completion reports
 - **[Changelog](../CHANGELOG.md)** - Project changelog
 
-### ⚙️ Configuration & Models
+### ⚙️ Configuration & Deployment
 - **[API Reference](./API_REFERENCE.md)** - **NEW:** Complete REST API documentation (Training & Dataset backends)
+- **[Deployment Guide](./DEPLOYMENT_GUIDE.md)** - **NEW:** Complete deployment guide (dev/prod/Docker)
 - **[Configuration Reference](./CONFIGURATION_REFERENCE.md)** - **NEW:** Complete config options guide
 - **[Models](./MODELS.md)** - Available models and recommendations
 - **[vLLM Installation](./VLLM_INSTALLATION.md)** - vLLM setup guide
