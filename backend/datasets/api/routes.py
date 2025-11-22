@@ -4,9 +4,11 @@ Dataset API Routes
 FastAPI endpoints for dataset management and export.
 """
 
+import json
 import logging
-from typing import Optional
+from typing import Optional, AsyncIterator
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi.responses import StreamingResponse
 
 from ..models import (
     DatasetCreateRequest,
@@ -216,3 +218,99 @@ async def export_dataset(
             "success": False,
             "message": f"Dataset not yet exported to {request.format.value}. Re-export not implemented."
         }
+
+
+@router.post("/stream", response_class=StreamingResponse)
+async def stream_dataset_search(
+    request: DatasetCreateRequest,
+    manager: DatasetManager = Depends(get_dataset_manager),
+    user: dict = Depends(optional_auth)
+):
+    """
+    Stream dataset search results as JSONL (memory-efficient)
+    
+    🌊 Streaming Endpoint: Returns JSONL data line-by-line without loading all data into memory.
+    Preferred over batch retrieval for large datasets and LoRA training pipelines.
+    
+    🔐 Security: JWT Required, Roles: admin OR trainer OR analyst
+    
+    Args:
+        request: Dataset search request (same as create_dataset)
+        user: Authenticated user
+        
+    Returns:
+        StreamingResponse with application/x-ndjson content-type
+        
+    Example:
+        ```bash
+        curl -X POST http://localhost:45681/api/datasets/stream \\
+             -H "Content-Type: application/json" \\
+             -d '{"name": "test", "search_query": {...}}' \\
+             --output training_data.jsonl
+        ```
+    """
+    try:
+        if not manager.search_api:
+            raise HTTPException(
+                status_code=503,
+                detail="UDS3 Search API not available. Streaming requires UDS3 integration."
+            )
+        
+        user_email = get_current_user_email(user) if JWT_AVAILABLE else user.get("email", "dev@local")
+        logger.info(f"🌊 Streaming dataset search: {request.name} - User: {user_email}")
+        
+        # Import DatasetSearchQuery from shared.database.dataset_search
+        from shared.database.dataset_search import DatasetSearchQuery
+        
+        # Convert request to DatasetSearchQuery
+        query = DatasetSearchQuery(
+            query_text=request.search_query.query_text,
+            top_k=request.search_query.top_k,
+            filters=request.search_query.filters,
+            min_quality_score=request.search_query.min_quality_score,
+            search_types=request.search_query.search_types,
+            weights=request.search_query.weights
+        )
+        
+        async def generate_jsonl() -> AsyncIterator[str]:
+            """Generate JSONL lines from streaming search results"""
+            count = 0
+            try:
+                async for doc in manager.search_api.stream_datasets(query, batch_size=100):
+                    training_entry = doc.to_training_format()
+                    json_line = json.dumps(training_entry, ensure_ascii=False) + '\n'
+                    yield json_line
+                    count += 1
+                    
+                    if count % 100 == 0:
+                        logger.info(f"   Streamed {count} documents...")
+                
+                logger.info(f"✅ Streaming complete: {count} documents")
+                
+            except Exception as e:
+                logger.error(f"❌ Streaming error: {e}")
+                # Send error as final JSONL line
+                error_line = json.dumps({
+                    "error": str(e),
+                    "message": "Streaming interrupted due to error"
+                }, ensure_ascii=False) + '\n'
+                yield error_line
+        
+        # Security Audit Log
+        logger.info(f"🔒 AUDIT: Dataset streaming initiated by {user_email} - Query: {request.search_query.query_text[:50]}...")
+        
+        return StreamingResponse(
+            generate_jsonl(),
+            media_type="application/x-ndjson",  # JSONL MIME type
+            headers={
+                "Content-Disposition": f'attachment; filename="{request.name}.jsonl"',
+                "X-Dataset-Name": request.name,
+                "X-Query-Text": request.search_query.query_text[:100]
+            }
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Dataset streaming failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

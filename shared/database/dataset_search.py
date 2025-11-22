@@ -8,20 +8,24 @@ Features:
 - Search documents by query text
 - Filter by domain, document_type, quality_score
 - Export search results to training datasets (JSONL)
+- Streaming support for memory-efficient data retrieval
 - Integration with Training Backend
 
 Usage:
-    from shared.uds3_dataset_search import DatasetSearchAPI, DatasetSearchQuery
+    from shared.database.dataset_search import DatasetSearchAPI, DatasetSearchQuery
     
     api = DatasetSearchAPI()
+    
+    # Batch mode
     results = await api.search_datasets(
         query="Verwaltungsrecht Photovoltaik",
         filters={"domain": "verwaltungsrecht"},
         top_k=100
     )
-    
-    # Export to JSONL for training
     api.export_to_jsonl(results, "datasets/training_data.jsonl")
+    
+    # Streaming mode (preferred for large datasets)
+    count = await api.stream_to_jsonl(query, "datasets/training_data.jsonl")
 """
 
 import asyncio
@@ -30,7 +34,7 @@ import logging
 import os
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, AsyncIterator
 
 logger = logging.getLogger(__name__)
 
@@ -281,6 +285,105 @@ class DatasetSearchAPI:
             logger.warning(f"Quality score calculation failed: {e}")
             return 0.5  # Default
     
+    async def stream_datasets(
+        self,
+        query: DatasetSearchQuery,
+        batch_size: int = 100
+    ) -> AsyncIterator[DatasetDocument]:
+        """
+        Stream datasets using UDS3 Hybrid Search (async generator)
+        
+        This method yields documents in batches for memory-efficient streaming.
+        Preferred over search_datasets() for large datasets and training pipelines.
+        
+        Args:
+            query: Dataset search query
+            batch_size: Number of documents to fetch per batch
+            
+        Yields:
+            DatasetDocument objects one at a time
+            
+        Example:
+            ```python
+            async for doc in api.stream_datasets(query):
+                # Process document immediately
+                train_on_document(doc)
+            ```
+        """
+        if not self.search_api:
+            logger.warning("UDS3 SearchAPI not available for streaming")
+            return
+        
+        try:
+            offset = 0
+            total_yielded = 0
+            
+            logger.info(f"🌊 Streaming datasets: '{query.query_text}' (batch_size={batch_size})")
+            
+            while total_yielded < query.top_k:
+                # Calculate batch size for this iteration
+                remaining = query.top_k - total_yielded
+                current_batch_size = min(batch_size, remaining)
+                
+                # Create batch query
+                batch_query = DatasetSearchQuery(
+                    query_text=query.query_text,
+                    top_k=current_batch_size,
+                    filters=query.filters,
+                    min_quality_score=query.min_quality_score,
+                    search_types=query.search_types,
+                    weights=query.weights
+                )
+                
+                # Convert to UDS3 query
+                uds3_query = batch_query.to_uds3_query()
+                if not uds3_query:
+                    logger.error("Failed to convert query to UDS3 format")
+                    break
+                
+                # Execute hybrid search for this batch
+                search_results = await self.search_api.hybrid_search(uds3_query)
+                
+                if not search_results:
+                    logger.info(f"✅ Streaming complete: {total_yielded} documents yielded")
+                    break
+                
+                # Process and yield documents
+                for result in search_results:
+                    # Quality filtering
+                    quality_score = self._calculate_quality_score(result)
+                    
+                    if quality_score < query.min_quality_score:
+                        logger.debug(f"   Skipping low-quality doc: {result.document_id} (score={quality_score:.2f})")
+                        continue
+                    
+                    doc = DatasetDocument(
+                        document_id=result.document_id,
+                        content=result.content,
+                        metadata=result.metadata,
+                        score=result.score,
+                        quality_score=quality_score
+                    )
+                    
+                    yield doc
+                    total_yielded += 1
+                    
+                    if total_yielded >= query.top_k:
+                        break
+                
+                offset += current_batch_size
+                
+                # Avoid infinite loop if we got fewer results than batch_size
+                if len(search_results) < current_batch_size:
+                    logger.info(f"✅ Streaming complete: {total_yielded} documents yielded (no more results)")
+                    break
+            
+            logger.info(f"✅ Streaming finished: {total_yielded} documents total")
+        
+        except Exception as e:
+            logger.error(f"❌ Dataset streaming failed: {e}")
+            raise
+    
     def export_to_jsonl(
         self,
         documents: List[DatasetDocument],
@@ -311,6 +414,49 @@ class DatasetSearchAPI:
         except Exception as e:
             logger.error(f"❌ Export failed: {e}")
             return False
+    
+    async def stream_to_jsonl(
+        self,
+        query: DatasetSearchQuery,
+        output_path: str,
+        batch_size: int = 100
+    ) -> int:
+        """
+        Stream documents directly to JSONL file (memory-efficient)
+        
+        This method is preferred for large datasets as it doesn't load
+        all documents into memory at once.
+        
+        Args:
+            query: Dataset search query
+            output_path: Output file path
+            batch_size: Number of documents per streaming batch
+            
+        Returns:
+            Number of documents exported
+        """
+        try:
+            output_file = Path(output_path)
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            count = 0
+            logger.info(f"🌊 Streaming to JSONL: {output_path}")
+            
+            with open(output_file, 'w', encoding='utf-8') as f:
+                async for doc in self.stream_datasets(query, batch_size):
+                    training_entry = doc.to_training_format()
+                    f.write(json.dumps(training_entry, ensure_ascii=False) + '\n')
+                    count += 1
+                    
+                    if count % 100 == 0:
+                        logger.info(f"   Streamed {count} documents...")
+            
+            logger.info(f"✅ Streamed {count} documents to {output_path}")
+            return count
+        
+        except Exception as e:
+            logger.error(f"❌ Stream to JSONL failed: {e}")
+            raise
     
     def get_statistics(self, documents: List[DatasetDocument]) -> Dict:
         """
@@ -380,7 +526,7 @@ class DatasetSearchResponse(BaseModel):
 # ============================================================================
 
 async def example_usage():
-    """Example: Search datasets and export to JSONL"""
+    """Example: Search datasets and export to JSONL (batch mode)"""
     
     # Initialize API
     api = DatasetSearchAPI()
@@ -413,6 +559,39 @@ async def example_usage():
         print(f"✅ Exported to {output_path}")
 
 
+async def example_streaming():
+    """Example: Stream datasets to JSONL (memory-efficient)"""
+    
+    # Initialize API
+    api = DatasetSearchAPI()
+    
+    # Create search query
+    query = DatasetSearchQuery(
+        query_text="Verwaltungsrecht Photovoltaik Dachanlage",
+        top_k=1000,  # Large dataset
+        filters={"domain": "verwaltungsrecht"},
+        min_quality_score=0.6,
+        search_types=["vector", "graph"],
+        weights={"vector": 0.6, "graph": 0.4}
+    )
+    
+    # Stream to JSONL (preferred for large datasets)
+    output_path = "data/training_datasets/verwaltungsrecht_photovoltaik_stream.jsonl"
+    count = await api.stream_to_jsonl(query, output_path, batch_size=100)
+    print(f"✅ Streamed {count} documents to {output_path}")
+    
+    # Alternative: Manual streaming for custom processing
+    print("\n🌊 Manual streaming example:")
+    doc_count = 0
+    async for doc in api.stream_datasets(query, batch_size=100):
+        # Process each document immediately (e.g., train LoRA adapter)
+        print(f"   Document {doc_count+1}: {doc.document_id[:8]}... (quality: {doc.quality_score:.2f})")
+        doc_count += 1
+        if doc_count >= 10:  # Limit for demo
+            break
+    print(f"✅ Processed {doc_count} documents via streaming")
+
+
 if __name__ == "__main__":
     # Test UDS3 availability
     print("=" * 60)
@@ -421,7 +600,11 @@ if __name__ == "__main__":
     print(f"UDS3 Available: {UDS3_AVAILABLE}")
     
     if UDS3_AVAILABLE:
+        print("\n🔵 Running batch example...")
         asyncio.run(example_usage())
+        
+        print("\n🌊 Running streaming example...")
+        asyncio.run(example_streaming())
     else:
         print("⚠️ UDS3 not available. Install dependencies:")
         print("   cd c:/VCC/uds3")
