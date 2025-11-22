@@ -43,6 +43,12 @@ from .knowledge_gaps import (
     get_knowledge_gap_database
 )
 
+from .knowledge_gaps_pg import (
+    KnowledgeGapPostgreSQLDatabase,
+    SystemSource,
+    get_knowledge_gap_pg_database
+)
+
 __all__ = [
     # Registry
     'AdapterRegistry',
@@ -65,11 +71,16 @@ __all__ = [
     'AdapterEvaluationManager',
     'get_evaluation_manager',
     
-    # Knowledge Gaps
+    # Knowledge Gaps (File-based)
     'KnowledgeGap',
     'KnowledgeGapDetector',
     'KnowledgeGapDatabase',
     'GapSeverity',
     'GapSource',
     'get_knowledge_gap_database',
+    
+    # Knowledge Gaps (PostgreSQL)
+    'KnowledgeGapPostgreSQLDatabase',
+    'SystemSource',
+    'get_knowledge_gap_pg_database',
 ]

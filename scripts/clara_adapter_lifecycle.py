@@ -58,7 +58,8 @@ async def run_lifecycle_pipeline(
     golden_dataset_id: str,
     method: AdapterMethod = AdapterMethod.LORA,
     rank: int = 16,
-    auto_approve_threshold: float = 85.0
+    auto_approve_threshold: float = 85.0,
+    use_postgres: bool = False
 ):
     """
     Run complete adapter lifecycle pipeline
@@ -77,6 +78,7 @@ async def run_lifecycle_pipeline(
         method: LoRA/QLoRA/DoRA
         rank: LoRA rank
         auto_approve_threshold: Auto-approve if score >= this (0-100)
+        use_postgres: Use PostgreSQL for knowledge gap storage
     """
     logger.info("=" * 70)
     logger.info("🚀 Starting LoRA Adapter Lifecycle Pipeline")
@@ -85,13 +87,29 @@ async def run_lifecycle_pipeline(
     logger.info(f"Method: {method.value}")
     logger.info(f"Query: {query_text}")
     logger.info(f"Golden Dataset: {golden_dataset_id}")
+    logger.info(f"Database: PostgreSQL" if use_postgres else "JSONL file")
     logger.info("=" * 70)
     
     # Initialize managers
     registry = get_adapter_registry()
     dataset_mgr = get_golden_dataset_manager()
     eval_mgr = get_evaluation_manager()
-    gap_db = get_knowledge_gap_database()
+    
+    # Initialize knowledge gap database (PostgreSQL or file-based)
+    if use_postgres:
+        try:
+            from shared.adapters import get_knowledge_gap_pg_database, SystemSource
+            gap_db = get_knowledge_gap_pg_database()
+            system_source = SystemSource.CLARA
+            logger.info("✅ Using PostgreSQL knowledge gap database")
+        except Exception as e:
+            logger.warning(f"PostgreSQL not available, falling back to file: {e}")
+            gap_db = get_knowledge_gap_database()
+            system_source = None
+            use_postgres = False
+    else:
+        gap_db = get_knowledge_gap_database()
+        system_source = None
     
     # Step 1: Stream training data
     logger.info("\n📥 Step 1/5: Streaming training data from UDS3/Themis...")
@@ -176,9 +194,16 @@ async def run_lifecycle_pipeline(
         
         for gap_data in knowledge_gaps:
             gap = KnowledgeGap.from_dict(gap_data)
-            gap_db.add_gap(gap)
+            if use_postgres and system_source:
+                gap_db.add_gap(gap, system_source=system_source)
+            else:
+                gap_db.add_gap(gap)
         
         logger.info(f"✅ Knowledge gaps saved to database")
+        if use_postgres:
+            logger.info(f"   Database: PostgreSQL (source: {system_source.value})")
+        else:
+            logger.info(f"   Database: JSONL file")
         logger.info(f"   Severity breakdown:")
         severity_counts = {}
         for gap_data in knowledge_gaps:
@@ -366,6 +391,12 @@ Examples:
         help="Auto-approve threshold (default: 85.0)"
     )
     
+    parser.add_argument(
+        "--use-postgres",
+        action="store_true",
+        help="Use PostgreSQL for knowledge gap storage (default: JSONL file)"
+    )
+    
     args = parser.parse_args()
     
     # Convert method to enum
@@ -383,7 +414,8 @@ Examples:
         golden_dataset_id=args.golden_dataset,
         method=method,
         rank=args.rank,
-        auto_approve_threshold=args.auto_approve_threshold
+        auto_approve_threshold=args.auto_approve_threshold,
+        use_postgres=args.use_postgres
     ))
     
     sys.exit(0 if success else 1)
