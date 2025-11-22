@@ -111,6 +111,10 @@ if PYDANTIC_AVAILABLE:
         # ===== UDS3 Settings =====
         uds3_enabled: bool = Field(default=True, alias="UDS3_ENABLED")
         
+        # ===== Streaming Settings =====
+        streaming_enabled: bool = Field(default=True, alias="STREAMING_ENABLED")
+        streaming_batch_size: int = Field(default=100, ge=10, le=1000, alias="STREAMING_BATCH_SIZE")
+        
         # ===== File Paths =====
         project_root: Path = Field(default_factory=lambda: Path(__file__).parent.parent)
         data_dir: Path = Field(default_factory=lambda: Path(__file__).parent.parent / "data")
