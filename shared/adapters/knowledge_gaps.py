@@ -14,6 +14,7 @@ Features:
 
 import json
 import logging
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -46,8 +47,12 @@ class KnowledgeGap:
     
     Tracks areas where the adapter performs poorly or lacks knowledge.
     Used to guide future training data collection.
+    
+    Note:
+        gap_id is a full UUID (e.g., "d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d")
+        for complete traceability and uniqueness across all systems.
     """
-    gap_id: str
+    gap_id: str  # Full UUID for traceability
     domain: str
     adapter_id: Optional[str] = None
     
@@ -172,9 +177,9 @@ class KnowledgeGapDetector:
             # Extract topic from prompt or metadata
             topic = self._extract_topic(result.prompt)
             
-            # Create gap
+            # Create gap with full UUID for traceability
             gap = KnowledgeGap(
-                gap_id=f"gap-{adapter_id}-{len(gaps)+1}",
+                gap_id=str(uuid.uuid4()),
                 domain=domain,
                 adapter_id=adapter_id,
                 topic=topic,
@@ -223,7 +228,7 @@ class KnowledgeGapDetector:
         perplexity = training_metrics.get('final_perplexity', 0)
         if perplexity > 10:  # Threshold
             gap = KnowledgeGap(
-                gap_id=f"gap-{adapter_id}-train-perplexity",
+                gap_id=str(uuid.uuid4()),
                 domain=domain,
                 adapter_id=adapter_id,
                 topic=f"{domain} general knowledge",
@@ -239,7 +244,7 @@ class KnowledgeGapDetector:
         val_accuracy = training_metrics.get('val_accuracy', 1.0)
         if val_accuracy < 0.7:
             gap = KnowledgeGap(
-                gap_id=f"gap-{adapter_id}-train-accuracy",
+                gap_id=str(uuid.uuid4()),
                 domain=domain,
                 adapter_id=adapter_id,
                 topic=f"{domain} validation topics",
@@ -292,7 +297,7 @@ class KnowledgeGapDetector:
                 severity = GapSeverity.CRITICAL if count == 0 else GapSeverity.HIGH
                 
                 gap = KnowledgeGap(
-                    gap_id=f"gap-coverage-{topic.replace(' ', '-').lower()}",
+                    gap_id=str(uuid.uuid4()),
                     domain=domain,
                     topic=topic,
                     severity=severity,

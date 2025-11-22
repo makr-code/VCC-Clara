@@ -116,10 +116,11 @@ gap_db = get_knowledge_gap_pg_database(
 
 ```python
 from shared.adapters import KnowledgeGap, SystemSource, GapSeverity, GapSource
+import uuid
 
-# Create gap
+# Create gap with UUID
 gap = KnowledgeGap(
-    gap_id="gap-clara-001",
+    gap_id=str(uuid.uuid4()),  # Full UUID for traceability
     domain="verwaltungsrecht",
     topic="Photovoltaik Genehmigungsverfahren",
     severity=GapSeverity.HIGH,
@@ -182,9 +183,9 @@ all_stats = gap_db.get_statistics()
 #### Update Status
 
 ```python
-# Mark gap as resolved
+# Mark gap as resolved (use UUID from gap object or list command)
 gap_db.update_gap_status(
-    gap_id="gap-clara-001",
+    gap_id="d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d",
     status="resolved",
     resolution_notes="Added 100 training samples"
 )
@@ -269,8 +270,8 @@ By Source:
 #### Resolve Gaps
 
 ```bash
-# PostgreSQL
-python scripts/clara_knowledge_gaps.py resolve gap-123 \
+# PostgreSQL (use UUID from list command)
+python scripts/clara_knowledge_gaps.py resolve d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d \
     --notes "Added 50 training samples" \
     --postgres
 ```

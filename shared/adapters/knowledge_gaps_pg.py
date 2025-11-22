@@ -45,7 +45,7 @@ class KnowledgeGapPostgreSQLDatabase:
     Uses a single table with source tracking.
     
     Table Schema:
-        - gap_id (PK): Unique identifier
+        - gap_id (PK): Full UUID for complete traceability (e.g., "d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d")
         - system_source: System that detected gap (clara/veritas/covina)
         - domain: Domain/specialty
         - adapter_id: Related adapter

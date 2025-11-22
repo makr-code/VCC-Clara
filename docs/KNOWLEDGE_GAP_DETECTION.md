@@ -133,9 +133,11 @@ KnowledgeGap:
 
 **Format:** One JSON object per line (JSONL)
 
+**Note:** Each gap has a full UUID for complete traceability
+
 ```json
-{"gap_id": "gap-verwaltungsrecht-lora-v1.0.0-1", "domain": "verwaltungsrecht", "topic": "Photovoltaik Genehmigungsverfahren", "severity": "high", "source": "evaluation", "evaluation_score": 55.2, "suggested_data_query": "verwaltungsrecht Photovoltaik Genehmigungsverfahren", "status": "open", ...}
-{"gap_id": "gap-verwaltungsrecht-lora-v1.0.0-2", "domain": "verwaltungsrecht", "topic": "Baurecht Dachanlage", "severity": "medium", "source": "evaluation", "evaluation_score": 65.8, "suggested_data_query": "verwaltungsrecht Baurecht Dachanlage", "status": "open", ...}
+{"gap_id": "d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d", "domain": "verwaltungsrecht", "topic": "Photovoltaik Genehmigungsverfahren", "severity": "high", "source": "evaluation", "evaluation_score": 55.2, "suggested_data_query": "verwaltungsrecht Photovoltaik Genehmigungsverfahren", "status": "open", ...}
+{"gap_id": "7a3f9c2e-1b4d-4e6f-8a5c-9d2e7f1b3a4c", "domain": "verwaltungsrecht", "topic": "Baurecht Dachanlage", "severity": "medium", "source": "evaluation", "evaluation_score": 65.8, "suggested_data_query": "verwaltungsrecht Baurecht Dachanlage", "status": "open", ...}
 ```
 
 ---
@@ -183,7 +185,7 @@ python scripts/clara_knowledge_gaps.py list
 Knowledge Gaps (3 found)
 ================================================================================
 
-1. gap-verwaltungsrecht-lora-v1.0.0-1
+1. d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d
    Domain: verwaltungsrecht
    Topic: Photovoltaik Genehmigungsverfahren...
    Severity: high | Priority: 65.0/100
@@ -249,7 +251,7 @@ By Source:
 #### Mark Gap as Resolved
 
 ```bash
-python scripts/clara_knowledge_gaps.py resolve gap-123 \
+python scripts/clara_knowledge_gaps.py resolve d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d \
     --notes "Added 50 training samples on Photovoltaik Genehmigungsverfahren"
 ```
 
@@ -264,7 +266,7 @@ python scripts/clara_knowledge_gaps.py export gaps.json \
 ```json
 [
   {
-    "gap_id": "gap-verwaltungsrecht-lora-v1.0.0-1",
+    "gap_id": "d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d",
     "domain": "verwaltungsrecht",
     "topic": "Photovoltaik Genehmigungsverfahren",
     "severity": "high",
@@ -313,8 +315,8 @@ python scripts/clara_adapter_lifecycle.py \
     --query "Photovoltaik Genehmigungsverfahren" \
     --golden-dataset verwaltungsrecht-golden-v1
 
-# Step 5: Mark gap as resolved
-python scripts/clara_knowledge_gaps.py resolve gap-verwaltungsrecht-lora-v1.0.0-1 \
+# Step 5: Mark gap as resolved (use UUID from list command)
+python scripts/clara_knowledge_gaps.py resolve d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d \
     --notes "Retrained with 500 Photovoltaik samples"
 ```
 
@@ -376,15 +378,15 @@ stats = gap_db.get_statistics()
 ### Update Gap Status
 
 ```python
-# Mark gap as in progress
+# Mark gap as in progress (use UUID from gap object)
 gap_db.update_gap_status(
-    gap_id="gap-123",
+    gap_id="d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d",
     status="in_progress"
 )
 
 # Mark gap as resolved
 gap_db.update_gap_status(
-    gap_id="gap-123",
+    gap_id="d4b8c1a2-5f3e-4a7b-9c2d-8e6f1a4b3c5d",
     status="resolved",
     resolution_notes="Added 100 training samples"
 )
