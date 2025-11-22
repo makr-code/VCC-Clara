@@ -259,8 +259,8 @@ async def stream_dataset_search(
         user_email = get_current_user_email(user) if JWT_AVAILABLE else user.get("email", "dev@local")
         logger.info(f"🌊 Streaming dataset search: {request.name} - User: {user_email}")
         
-        # Import DatasetSearchQuery from shared.database
-        from shared.database import DatasetSearchQuery
+        # Import DatasetSearchQuery from shared.database.dataset_search
+        from shared.database.dataset_search import DatasetSearchQuery
         
         # Convert request to DatasetSearchQuery
         query = DatasetSearchQuery(

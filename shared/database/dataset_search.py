@@ -8,20 +8,24 @@ Features:
 - Search documents by query text
 - Filter by domain, document_type, quality_score
 - Export search results to training datasets (JSONL)
+- Streaming support for memory-efficient data retrieval
 - Integration with Training Backend
 
 Usage:
-    from shared.uds3_dataset_search import DatasetSearchAPI, DatasetSearchQuery
+    from shared.database.dataset_search import DatasetSearchAPI, DatasetSearchQuery
     
     api = DatasetSearchAPI()
+    
+    # Batch mode
     results = await api.search_datasets(
         query="Verwaltungsrecht Photovoltaik",
         filters={"domain": "verwaltungsrecht"},
         top_k=100
     )
-    
-    # Export to JSONL for training
     api.export_to_jsonl(results, "datasets/training_data.jsonl")
+    
+    # Streaming mode (preferred for large datasets)
+    count = await api.stream_to_jsonl(query, "datasets/training_data.jsonl")
 """
 
 import asyncio
@@ -30,7 +34,7 @@ import logging
 import os
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, AsyncIterator
 
 logger = logging.getLogger(__name__)
 
@@ -285,7 +289,7 @@ class DatasetSearchAPI:
         self,
         query: DatasetSearchQuery,
         batch_size: int = 100
-    ):
+    ) -> AsyncIterator[DatasetDocument]:
         """
         Stream datasets using UDS3 Hybrid Search (async generator)
         

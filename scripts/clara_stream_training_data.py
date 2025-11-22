@@ -16,11 +16,11 @@ Usage:
     python scripts/clara_stream_training_data.py --query "Verwaltungsrecht" --output data/training.jsonl
     
     # Stream with custom filters
-    python scripts/clara_stream_training_data.py \\
-        --query "Photovoltaik" \\
-        --domain verwaltungsrecht \\
-        --min-quality 0.7 \\
-        --top-k 5000 \\
+    python scripts/clara_stream_training_data.py \
+        --query "Photovoltaik" \
+        --domain verwaltungsrecht \
+        --min-quality 0.7 \
+        --top-k 5000 \
         --output data/pv_training.jsonl
 """
 
@@ -35,7 +35,7 @@ from typing import Optional
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from shared.database import DatasetSearchAPI, DatasetSearchQuery, UDS3_AVAILABLE
+from shared.database.dataset_search import DatasetSearchAPI, DatasetSearchQuery, UDS3_AVAILABLE
 from config import config
 
 # Setup logging
