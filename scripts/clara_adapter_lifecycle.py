@@ -37,6 +37,7 @@ from shared.adapters import (
     get_adapter_registry,
     get_golden_dataset_manager,
     get_evaluation_manager,
+    get_knowledge_gap_database,
     AdapterMethod,
     AdapterStatus
 )
@@ -90,6 +91,7 @@ async def run_lifecycle_pipeline(
     registry = get_adapter_registry()
     dataset_mgr = get_golden_dataset_manager()
     eval_mgr = get_evaluation_manager()
+    gap_db = get_knowledge_gap_database()
     
     # Step 1: Stream training data
     logger.info("\n📥 Step 1/5: Streaming training data from UDS3/Themis...")
@@ -159,17 +161,38 @@ async def run_lifecycle_pipeline(
     summary = evaluation['summary']
     overall_score = summary['average_score']
     pass_rate = summary['pass_rate']
+    knowledge_gaps = evaluation.get('knowledge_gaps', [])
     
     logger.info(f"📊 Evaluation Results:")
     logger.info(f"   Overall Score: {overall_score:.1f}/100")
     logger.info(f"   Pass Rate: {pass_rate:.1f}%")
     logger.info(f"   Samples: {summary['passed']}/{summary['total_samples']}")
+    logger.info(f"   Knowledge Gaps Detected: {len(knowledge_gaps)}")
+    
+    # Save knowledge gaps to database
+    if knowledge_gaps:
+        logger.info(f"\n🔍 Saving {len(knowledge_gaps)} knowledge gaps to database...")
+        from shared.adapters.knowledge_gaps import KnowledgeGap
+        
+        for gap_data in knowledge_gaps:
+            gap = KnowledgeGap.from_dict(gap_data)
+            gap_db.add_gap(gap)
+        
+        logger.info(f"✅ Knowledge gaps saved to database")
+        logger.info(f"   Severity breakdown:")
+        severity_counts = {}
+        for gap_data in knowledge_gaps:
+            sev = gap_data['severity']
+            severity_counts[sev] = severity_counts.get(sev, 0) + 1
+        for sev, count in severity_counts.items():
+            logger.info(f"     {sev}: {count}")
     
     # Update adapter metrics
     registry.update_metrics(adapter_version.adapter_id, {
         "llm_judge_score": overall_score,
         "pass_rate": pass_rate,
-        "golden_dataset_accuracy": summary['passed'] / summary['total_samples']
+        "golden_dataset_accuracy": summary['passed'] / summary['total_samples'],
+        "knowledge_gaps_detected": len(knowledge_gaps)
     })
     
     # Step 5: Auto-approve if meets threshold

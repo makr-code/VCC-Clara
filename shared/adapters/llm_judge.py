@@ -198,7 +198,7 @@ class LLMJudge:
                                  signature: async fn(prompt) -> output
             
         Returns:
-            Dict with evaluation summary and detailed results
+            Dict with evaluation summary, detailed results, and knowledge gaps
         """
         logger.info(f"🧑‍⚖️ Evaluating adapter {adapter_id} on {golden_dataset.dataset_id}")
         
@@ -230,9 +230,22 @@ class LLMJudge:
         summary['golden_dataset_id'] = golden_dataset.dataset_id
         summary['evaluated_at'] = datetime.now().isoformat()
         
+        # Detect knowledge gaps from failed evaluations
+        from .knowledge_gaps import KnowledgeGapDetector
+        gap_detector = KnowledgeGapDetector()
+        knowledge_gaps = gap_detector.detect_from_evaluation(
+            adapter_id=adapter_id,
+            domain=golden_dataset.domain,
+            evaluation_results=results
+        )
+        
+        # Add gaps to summary
+        summary['knowledge_gaps_detected'] = len(knowledge_gaps)
+        
         return {
             "summary": summary,
-            "results": [r.to_dict() for r in results]
+            "results": [r.to_dict() for r in results],
+            "knowledge_gaps": [g.to_dict() for g in knowledge_gaps]
         }
     
     def _build_evaluation_prompt(
