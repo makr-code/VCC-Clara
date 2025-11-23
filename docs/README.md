@@ -1,8 +1,8 @@
 # CLARA Documentation Index
 
 **Created:** 2025-11-17  
-**Last Updated:** 2025-11-17  
-**Version:** 2.0  
+**Last Updated:** 2025-11-23  
+**Version:** 2.1  
 **Status:** Active
 
 ---
@@ -13,7 +13,28 @@ This is the **central documentation hub** for the CLARA (Cognitive Legal and Adm
 
 **Documentation Grade:** A- (Up from C- after consolidation)  
 **Coverage:** 90%+ implementation coverage  
-**Total Guides:** 12 comprehensive guides + additional references
+**Total Guides:** 12 comprehensive guides + strategic documents
+
+---
+
+## 🎯 Strategic Planning Documents (NEW 2025-11-23)
+
+**For leadership, management, and planning:**
+
+| Document | Audience | Description | Size |
+|----------|----------|-------------|------|
+| **[EXECUTIVE_SUMMARY_WEITERENTWICKLUNG](./EXECUTIVE_SUMMARY_WEITERENTWICKLUNG.md)** | Management | Compact strategy overview (12 pages) | 10 KB | ✅ NEW |
+| **[VCC_CLARA_WEITERENTWICKLUNGSSTRATEGIE](./VCC_CLARA_WEITERENTWICKLUNGSSTRATEGIE.md)** | Leadership | Complete development strategy 2025-2027 (50+ pages) | 26 KB | ✅ NEW |
+| **[TECHNICAL_IMPLEMENTATION_ROADMAP](./TECHNICAL_IMPLEMENTATION_ROADMAP.md)** | Engineering | Detailed technical roadmap with code examples (80+ pages) | 35 KB | ✅ NEW |
+| **[../ROADMAP](../ROADMAP.md)** | All | Updated high-level roadmap with strategy links | Updated | ✅ |
+
+**Key Topics Covered:**
+- 🎯 Vision 2027: Cloud-Native, Enterprise-Ready AI Platform
+- 📊 4-Phase Strategy (18 months, €460k investment)
+- 🔒 Security & Compliance (Zero-Trust, ISO 27001)
+- 🤖 Advanced AI/ML (DoRA, RLHF, MLOps)
+- 🔗 VCC-Ecosystem Integration
+- 📈 ROI & Business Benefits
 
 ---
 
