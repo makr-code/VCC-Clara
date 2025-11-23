@@ -106,11 +106,11 @@
 │  │  Topics: training.*, inference.*, vcc.*             │         │
 │  └─────────────────────────────────────────────────────┘         │
 │                                                                   │
-│  Data Layer (Managed Services)                                   │
+│  Data Layer (On-Premise, Self-Hosted)                        │
 │  ┌─────────────┬──────────────┬──────────────┬─────────────┐   │
 │  │ PostgreSQL  │ Object Store │ Feature Store│ Cache       │   │
-│  │ (Aurora/    │ (S3/Blob)    │ (Feast)      │ (Redis)     │   │
-│  │  Cloud SQL) │              │              │             │   │
+│  │ (Patroni HA)│ (MinIO S3)   │ (Feast)      │ (Redis)     │   │
+│  │             │              │              │             │   │
 │  └─────────────┴──────────────┴──────────────┴─────────────┘   │
 │                                                                   │
 │  AI/ML Layer                                                     │
@@ -193,18 +193,18 @@ Local/VM Deployment          Kubernetes Cluster
 PostgreSQL                   │ - Memory-based     │
 ┌──────────────┐            └────────────────────┘
 │ Local        │
-│ Instance     │    ════►   Managed PostgreSQL
+│ Instance     │    ════►   PostgreSQL HA (On-Premise)
 │              │            ┌────────────────────┐
-│ Manual       │            │ Aurora/Cloud SQL   │
-│ Backups      │            │ - Multi-AZ         │
-└──────────────┘            │ - Auto Backups     │
-                             │ - Performance      │
-                             │   Insights         │
+│ Manual       │            │ Patroni Cluster    │
+│ Backups      │            │ - 3-Node HA        │
+└──────────────┘            │ - Auto Failover    │
+                             │ - Streaming        │
+                             │   Replication      │
                              └────────────────────┘
 
-Storage                      Object Storage
+Storage                      Object Storage (On-Premise)
 ┌──────────────┐            ┌────────────────────┐
-│ Local Files  │            │ S3/Azure Blob      │
+│ Local Files  │            │ MinIO (S3-compat.) │
 │              │    ════►   │ - Models           │
 │ Limited      │            │ - Training Data    │
 │ Scalability  │            │ - Lifecycle Mgmt   │

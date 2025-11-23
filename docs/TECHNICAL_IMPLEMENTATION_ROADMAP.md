@@ -709,29 +709,33 @@ spec:
 
 ### Sprint 13-16: Managed Services Integration (4 Wochen)
 
-#### Task 2.3: Managed PostgreSQL Migration
+#### Task 2.3: PostgreSQL High Availability Setup
 **Verantwortlich:** Database Admin + DevOps  
 **Aufwand:** 1 Woche  
 **Priorität:** 🟡 HIGH
 
-**Migration Steps:**
+**On-Premise HA Setup:**
 
-1. **Provision Managed PostgreSQL**
-   - AWS RDS / Azure Database / Google Cloud SQL
-   - Multi-AZ für High Availability
-   - Automated Backups
-   - Performance Insights
+1. **PostgreSQL HA Stack**
+   - **Patroni** für automatisches Failover
+   - **HAProxy/PgBouncer** für Connection Pooling
+   - **Streaming Replication** (Synchronous/Asynchronous)
+   - 3-Node Cluster (1 Primary, 2 Standby)
 
 2. **Data Migration**
 ```bash
 # 1. Backup current data
 pg_dump -h localhost -U postgres -d clara > clara_backup.sql
 
-# 2. Restore to managed instance
-psql -h managed-postgres.region.provider.com -U admin -d clara < clara_backup.sql
+# 2. Setup Patroni cluster
+# Install Patroni on all nodes
+pip install patroni[etcd]
 
-# 3. Verify
-psql -h managed-postgres.region.provider.com -U admin -d clara -c "SELECT COUNT(*) FROM documents;"
+# 3. Restore to HA cluster
+psql -h patroni-cluster-vip -U postgres -d clara < clara_backup.sql
+
+# 4. Verify replication
+psql -h patroni-cluster-vip -U postgres -c "SELECT * FROM pg_stat_replication;"
 ```
 
 3. **Connection Pooling (PgBouncer)**
@@ -758,7 +762,7 @@ spec:
 
 ---
 
-#### Task 2.4: Object Storage (S3/Azure Blob)
+#### Task 2.4: On-Premise Object Storage (MinIO)
 **Verantwortlich:** DevOps Engineer  
 **Aufwand:** 3 Tage  
 **Priorität:** 🟢 MEDIUM
@@ -769,6 +773,37 @@ spec:
 - Exports
 - Backups
 
+**MinIO Setup:**
+```yaml
+# MinIO Deployment (S3-kompatibel, on-premise)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+spec:
+  serviceName: minio
+  replicas: 4  # Distributed mode
+  template:
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:latest
+        args:
+        - server
+        - http://minio-{0...3}.minio.vcc-clara.svc.cluster.local/data
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: root-user
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: root-password
+```
+
 **Implementation:**
 ```python
 # shared/storage/object_storage.py
@@ -776,8 +811,14 @@ import boto3
 from typing import BinaryIO
 
 class ObjectStorage:
-    def __init__(self, bucket: str):
-        self.s3 = boto3.client('s3')
+    def __init__(self, bucket: str, endpoint_url: str = None):
+        # S3-compatible client (works with MinIO)
+        self.s3 = boto3.client(
+            's3',
+            endpoint_url=endpoint_url or 'http://minio:9000',
+            aws_access_key_id=os.getenv('MINIO_ACCESS_KEY'),
+            aws_secret_access_key=os.getenv('MINIO_SECRET_KEY')
+        )
         self.bucket = bucket
     
     def upload_model(self, model_path: str, key: str):

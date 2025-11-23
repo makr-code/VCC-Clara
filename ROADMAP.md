@@ -62,14 +62,14 @@ Für die vollständige Weiterentwicklungsstrategie siehe:
 
 ---
 
-### Phase 2: Cloud-Native Transformation (Q2-Q3 2026)
+### Phase 2: On-Premise Container Platform (Q2-Q3 2026)
 **Status:** 📋 Geplant  
 **Dauer:** 4 Monate  
 **Investment:** €80.000
 
 **Ziele:**
-- ✅ Kubernetes Migration
-- ✅ Managed Services (PostgreSQL, Storage)
+- ✅ On-Premise Kubernetes Deployment
+- ✅ Self-Hosted Services (PostgreSQL HA, MinIO)
 - ✅ Auto-Scaling (0-100 Pods in <2 Min)
 - ✅ Service Mesh (Istio) für mTLS
 - ✅ Deployment-Zeit <5 Minuten
@@ -78,9 +78,9 @@ Für die vollständige Weiterentwicklungsstrategie siehe:
 **Key Deliverables:**
 - Helm Charts für alle Services
 - Horizontal Pod Autoscaling
-- Managed PostgreSQL (Aurora/Cloud SQL)
-- Object Storage (S3/Azure Blob)
-- Infrastructure as Code (Terraform)
+- PostgreSQL HA mit Patroni
+- MinIO Object Storage (S3-kompatibel)
+- Infrastructure as Code (Terraform/Ansible)
 
 ---
 

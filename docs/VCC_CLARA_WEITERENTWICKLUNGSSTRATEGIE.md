@@ -16,19 +16,29 @@ Dieses Dokument definiert die strategische Weiterentwicklung des VCC-Clara AI-Sy
 
 **Clara wird zur führenden, selbstlernenden KI-Plattform für rechtliche und administrative Anwendungsfälle in Europa**, charakterisiert durch:
 
-- ✅ **Cloud-Native Architecture** - Skalierbar von Einzelnutzer bis Enterprise
+- ✅ **On-Premise First** - Vollständige Datenkontrolle, keine Vendor-Lock-ins
+- ✅ **Container-Native Architecture** - Skalierbar von Einzelnutzer bis Enterprise
 - ✅ **Zero-Downtime Learning** - Kontinuierliche Verbesserung ohne Unterbrechungen
 - ✅ **Enterprise-Grade Security** - DSGVO-konform, Zero-Trust-Architektur
 - ✅ **Multi-Modal AI** - Text, Dokumente, Bilder, Sprache
 - ✅ **Adaptive Intelligence** - Selbstoptimierende Systeme mit MLOps
 - ✅ **VCC-Ecosystem Integration** - Nahtlose Zusammenarbeit aller VCC-Komponenten
 
+### Architektur-Grundsätze
+
+**Fundamentale Prinzipien:**
+1. **On-Premise First:** Alle Komponenten müssen selbst-hostbar sein
+2. **Vendor-Agnostisch:** Offene Standards, keine Cloud-Provider-Abhängigkeiten
+3. **Open Source:** Bevorzugung von Open-Source-Lösungen
+4. **Datenhoheit:** Vollständige Kontrolle über alle Daten und Modelle
+5. **Portabilität:** System muss zwischen verschiedenen Umgebungen migrierbar sein
+
 ### Strategische Säulen
 
 | Säule | Fokus | Zeithorizont |
 |-------|-------|--------------|
 | **1. Technologische Excellence** | State-of-the-Art ML/AI, Performance, Skalierung | Kontinuierlich |
-| **2. Cloud & Infrastructure** | Kubernetes, Serverless, Multi-Cloud | 12-18 Monate |
+| **2. On-Premise Infrastructure** | Kubernetes, Self-Hosted Services, Automation | 12-18 Monate |
 | **3. Security & Compliance** | Zero-Trust, DSGVO, Audit, Zertifizierung | 6-12 Monate |
 | **4. Developer Experience** | APIs, SDKs, Documentation, Tooling | 3-6 Monate |
 | **5. VCC Ecosystem** | Integration, Interoperabilität, Standards | Kontinuierlich |
@@ -71,10 +81,10 @@ Dieses Dokument definiert die strategische Weiterentwicklung des VCC-Clara AI-Sy
 
 **Risiken:**
 - ⚠️ Schneller Tech-Wandel im LLM-Bereich
-- ⚠️ Compliance-Anforderungen (EU AI Act)
-- ⚠️ Konkurrenz durch große Cloud-Provider
+- ⚠️ Compliance-Anforderungen (EU AI Act, DSGVO)
+- ⚠️ Komplexität On-Premise-Betrieb
 - ⚠️ Ressourcen-Limitierungen (GPU-Kosten)
-- ⚠️ Vendor Lock-In bei proprietären LLMs
+- ⚠️ Abhängigkeit von Open-Source-Projekten
 
 ---
 
@@ -126,29 +136,31 @@ Dieses Dokument definiert die strategische Weiterentwicklung des VCC-Clara AI-Sy
    - Helm Charts für alle Services
    - Horizontal Pod Autoscaling
    - Service Mesh (Istio/Linkerd) für mTLS & Observability
-   - Managed Kubernetes (AKS/EKS/GKE)
+   - **On-Premise Kubernetes** (k3s/RKE2/Vanilla K8s)
 
 2. **Containerization & Orchestration** (Priority: 🔴 CRITICAL)
    - Multi-Stage Docker Builds (optimierte Images)
-   - Container Registry (Harbor/ECR)
-   - Image Scanning & Vulnerability Management
+   - **Self-Hosted Container Registry** (Harbor)
+   - Image Scanning & Vulnerability Management (Trivy/Clair)
    - GPU-enabled Container Support
 
-3. **Cloud-Native Storage** (Priority: 🟡 HIGH)
-   - Managed PostgreSQL (Aurora/Cloud SQL)
-   - Object Storage für Models (S3/Azure Blob)
+3. **On-Premise Storage** (Priority: 🟡 HIGH)
+   - **Self-Hosted PostgreSQL** (HA mit Patroni/Stolon)
+   - **Object Storage** (MinIO/Ceph für S3-Kompatibilität)
    - Distributed Caching (Redis/Memcached)
-   - Backup & Disaster Recovery
+   - Backup & Disaster Recovery (Velero/Restic)
 
-4. **Serverless Components** (Priority: 🟢 MEDIUM)
-   - Event-driven Batch Processing (Lambda/Cloud Functions)
-   - Serverless Inference (SageMaker/Vertex AI)
-   - Cost-Optimization durch Auto-Scaling
+4. **Event-Driven Architecture** (Priority: 🟢 MEDIUM)
+   - **Self-Hosted Message Queue** (Kafka/RabbitMQ/NATS)
+   - Asynchronous Batch Processing
+   - Auto-Scaling basierend auf Queue-Länge
 
 **Architektur-Prinzipien:**
+- **On-Premise First:** Alle Komponenten selbst-hostbar
+- **Vendor-Agnostisch:** Offene Standards, keine Cloud-Lock-ins
 - **12-Factor App** Compliance
 - **Immutable Infrastructure**
-- **Infrastructure as Code** (Terraform/Pulumi)
+- **Infrastructure as Code** (Terraform/Pulumi/Ansible)
 - **GitOps** (ArgoCD/Flux)
 
 **KPIs:**
@@ -557,12 +569,12 @@ Dieses Dokument definiert die strategische Weiterentwicklung des VCC-Clara AI-Sy
 ### Data Sharing
 
 1. **Shared Data Lake**
-   - S3/Azure Blob Storage
+   - **On-Premise Object Storage** (MinIO S3-kompatibel)
    - Parquet/Delta Lake Format
-   - Schema Registry
+   - Schema Registry (Confluent Schema Registry/Apicurio)
 
 2. **Feature Store**
-   - Feast/Tecton
+   - **Feast** (Open-Source, Self-Hosted)
    - Shared Features über Components
    - Real-Time & Batch Features
 
@@ -705,7 +717,7 @@ Dieses Dokument definiert die strategische Weiterentwicklung des VCC-Clara AI-Sy
 |--------|-------------------|--------|------------|
 | Scope Creep | Hoch | Mittel | Clear Priorities, Agile Methodology |
 | Knowledge Loss | Mittel | Hoch | Documentation, Pair Programming |
-| Vendor Lock-In | Mittel | Mittel | Open Standards, Multi-Cloud |
+| On-Premise Complexity | Mittel | Mittel | Automation, IaC, Monitoring |
 | Integration Complexity | Hoch | Mittel | API-First, Service Mesh |
 
 ---

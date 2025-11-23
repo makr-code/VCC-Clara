@@ -194,9 +194,10 @@ VCC-Clara entwickelt sich von einem funktionalen Prototypen zu einer **enterpris
 - Docker (Basic), PowerShell Scripts
 
 ### Ziel (2027)
-- **Container:** Kubernetes, Helm, Istio
-- **AI/ML:** vLLM, DoRA, RLHF, MLflow
-- **Cloud:** Multi-Cloud (AWS/Azure/GCP)
+- **Container:** Kubernetes (On-Premise), Helm, Istio
+- **AI/ML:** vLLM, DoRA, RLHF, MLflow (Self-Hosted)
+- **Infrastructure:** On-Premise First, Vendor-Agnostic
+- **Storage:** MinIO (S3-compatible), PostgreSQL HA (Patroni)
 - **Security:** Zero-Trust, Vault, mTLS
 - **Observability:** Prometheus, Grafana, OpenTelemetry
 - **APIs:** REST, GraphQL, SDKs (Python/JS/Go)
@@ -277,13 +278,13 @@ VCC-Clara entwickelt sich von einem funktionalen Prototypen zu einer **enterpris
 ### Mittelfristig (3-6 Monate)
 
 1. **Phase 1 komplett durchführen** (Stabilisierung)
-2. **Cloud-Provider auswählen** (AWS/Azure/GCP)
+2. **Infrastructure Planning** (On-Premise Kubernetes Setup)
 3. **Security Audit** durchführen
 4. **Kubernetes-Training** für Team
 
 ### Langfristig (12-18 Monate)
 
-1. **Cloud-Native Transformation** (Phase 2)
+1. **On-Premise Kubernetes Deployment** (Phase 2)
 2. **MLOps-Pipeline** etablieren (Phase 3)
 3. **Enterprise-Readiness** erreichen (Phase 4)
 4. **VCC-Ecosystem-Leader** werden
